@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 
 import '../widgets/hotel_card.dart';
 import 'hotel_detail_screen.dart';
+import 'customer_bookings_screen.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
   const CustomerDashboardScreen({super.key});
@@ -26,12 +27,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
 
   late AnimationController _floatingController;
 
-  final List<String> cities = [
-    'All',
-    'Faisalabad',
-    'Lahore',
-    'Islamabad',
-  ];
+  final List<String> cities = ['All', 'Faisalabad', 'Lahore', 'Islamabad'];
 
   @override
   void initState() {
@@ -65,7 +61,8 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
       final city = hotel['city']?.toString() ?? '';
       final cityLower = city.toLowerCase();
 
-      final matchesSearch = searchQuery.isEmpty ||
+      final matchesSearch =
+          searchQuery.isEmpty ||
           name.contains(searchQuery.toLowerCase()) ||
           cityLower.contains(searchQuery.toLowerCase());
 
@@ -82,9 +79,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
         children: [
           // Background gradient
           Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.darkGradient,
-            ),
+            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
           ),
 
           // Floating circles
@@ -95,14 +90,16 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 children: [
                   _buildFloatingCircle(
                     size: 260,
-                    top: -80 +
+                    top:
+                        -80 +
                         (math.sin(_floatingController.value * math.pi) * 30),
                     left: -90,
                     color: AppColors.primary.withOpacity(0.35),
                   ),
                   _buildFloatingCircle(
                     size: 320,
-                    bottom: -120 +
+                    bottom:
+                        -120 +
                         (math.cos(_floatingController.value * math.pi) * 45),
                     right: -80,
                     color: AppColors.secondary.withOpacity(0.25),
@@ -167,7 +164,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                             onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Map screen will be added next'),
+                                  content: Text(
+                                    'Map screen will be added next',
+                                  ),
                                 ),
                               );
                             },
@@ -192,7 +191,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                               location: hotel['city'] ?? 'Unknown City',
                               price: _toDouble(hotel['pricePerNight']),
                               rating: _toDouble(hotel['rating']),
-                             onTap: () {
+                              onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -235,14 +234,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.12),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.22),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.22)),
                 ),
-                child: const Icon(
-                  Icons.person_outline,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.person_outline, color: Colors.white),
               ),
             ),
           ),
@@ -255,10 +249,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
               children: [
                 Text(
                   'Welcome back',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
                 ),
                 SizedBox(height: 3),
                 Text(
@@ -284,9 +275,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.12),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.22),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.22)),
                 ),
                 child: IconButton(
                   onPressed: () {},
@@ -316,9 +305,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.10),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.22),
-              ),
+              border: Border.all(color: Colors.white.withOpacity(0.22)),
             ),
             child: Row(
               children: [
@@ -471,16 +458,16 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
             price: _toDouble(hotel['pricePerNight']),
             rating: _toDouble(hotel['rating']),
             onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => HotelDetailScreen(
-                      hotelId: featuredHotels[index].id,
-                      hotel: hotel,
-                    ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HotelDetailScreen(
+                    hotelId: featuredHotels[index].id,
+                    hotel: hotel,
                   ),
-                );
-              },
+                ),
+              );
+            },
           );
         },
       ),
@@ -495,15 +482,10 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
           height: 78,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [
-                Color(0xFF1A237E),
-                Color(0xFF311B92),
-              ],
+              colors: [Color(0xFF1A237E), Color(0xFF311B92)],
             ),
             border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.16),
-              ),
+              top: BorderSide(color: Colors.white.withOpacity(0.16)),
             ),
           ),
           child: Row(
@@ -525,7 +507,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 icon: Icons.bookmark_border_rounded,
                 label: 'Bookings',
                 selected: false,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CustomerBookingsScreen(),
+                    ),
+                  );
+                },
               ),
               _bottomItem(
                 icon: Icons.person_outline_rounded,
@@ -554,10 +543,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: selected ? AppColors.accent : Colors.white70,
-            ),
+            Icon(icon, color: selected ? AppColors.accent : Colors.white70),
             const SizedBox(height: 4),
             Text(
               label,
@@ -590,18 +576,12 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.10),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.20),
-                ),
+                border: Border.all(color: Colors.white.withOpacity(0.20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    icon,
-                    size: 74,
-                    color: AppColors.accent,
-                  ),
+                  Icon(icon, size: 74, color: AppColors.accent),
                   const SizedBox(height: 18),
                   Text(
                     title,
@@ -615,9 +595,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                   const SizedBox(height: 8),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.70),
-                    ),
+                    style: TextStyle(color: Colors.white.withOpacity(0.70)),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -648,10 +626,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
           child: Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
         ),
       ),
@@ -755,9 +730,7 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.18),
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.20),
-                      ),
+                      border: Border.all(color: Colors.white.withOpacity(0.20)),
                     ),
                     child: Row(
                       children: [

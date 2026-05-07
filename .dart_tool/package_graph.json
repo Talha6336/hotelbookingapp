@@ -14,7 +14,8 @@
         "firebase_storage",
         "flutter",
         "flutter_image_filters",
-        "image_picker"
+        "image_picker",
+        "intl"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -44,6 +45,15 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.20.2",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
       ]
     },
     {
