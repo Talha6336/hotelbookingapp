@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'hotelbookingtz.firebasestorage.app',
     measurementId: 'G-VGGBPKMT5Y',
   );
+
 }
