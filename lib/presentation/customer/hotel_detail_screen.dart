@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'booking_screen.dart';
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
@@ -601,12 +602,16 @@ class HotelDetailScreen extends StatelessWidget {
                   height: 54,
                   child: ElevatedButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Booking screen for $hotelName'),
-                        ),
-                      );
-                    },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => BookingScreen(
+        hotelId: hotelId,
+        hotel: hotel,
+      ),
+    ),
+  );
+},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       foregroundColor: AppColors.backgroundDark1,
