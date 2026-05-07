@@ -4,7 +4,7 @@ import 'package:hotelbookingapp/presentation/login/login_screen.dart';
 import 'presentation/signup/signup_screen.dart';
 import 'firebase_options.dart';
 import 'presentation/customer/customer_dashboard_screen.dart';
-
+import 'presentation/owner/owner_dashboard_screen.dart';
 // Assuming you structured the folders as suggested:
 import 'core/theme/app_theme.dart';
 import 'presentation/splash/splash_screen.dart';
@@ -45,9 +45,8 @@ class StayEaseApp extends StatelessWidget {
         // We will replace these with actual screens later
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/customer_nav': (context) => const  CustomerDashboardScreen(),
-        '/owner_nav': (context) => const  CustomerDashboardScreen(),
-        
+        '/customer_nav': (context) => const CustomerDashboardScreen(),
+        '/owner_nav': (context) => const OwnerDashboardScreen(),
       },
     );
   }
