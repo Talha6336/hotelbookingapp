@@ -9,6 +9,8 @@ class AppColors {
   static const Color textPrimary = Color(0xFF1E1E1E);
   static const Color textSecondary = Color(0xFF757575);
   static const Color surfaceWhite = Colors.white;
+  static const Color bgTop = Color(0xFF1A237E);
+  static const Color bgBottom = Color(0xFF311B92);
 
   // Reusable subtle gradient for backgrounds
   static const LinearGradient darkGradient = LinearGradient(

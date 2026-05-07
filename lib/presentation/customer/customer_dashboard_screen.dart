@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../widgets/hotel_card.dart';
 import 'hotel_detail_screen.dart';
 import 'customer_bookings_screen.dart';
+import 'profile_screen.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
   const CustomerDashboardScreen({super.key});
@@ -520,7 +521,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 icon: Icons.person_outline_rounded,
                 label: 'Profile',
                 selected: false,
-                onTap: () {},
+                 onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
