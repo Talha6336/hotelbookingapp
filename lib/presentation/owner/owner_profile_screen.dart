@@ -3,10 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hotelbookingapp/presentation/owner/owner_bookings_screen.dart';
+import 'package:hotelbookingapp/presentation/owner/owner_hotels_screen.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
 import '../customer/edit_profile_screen.dart';
+
 
 class OwnerProfileScreen extends StatelessWidget {
   const OwnerProfileScreen({super.key});
@@ -478,12 +481,7 @@ class OwnerProfileScreen extends StatelessWidget {
             title: 'My Hotels',
             subtitle: 'View and manage your hotels',
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('My Hotels screen will be added'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerHotelsScreen()));
             },
           ),
           _divider(),
@@ -492,7 +490,7 @@ class OwnerProfileScreen extends StatelessWidget {
             title: 'Booking Requests',
             subtitle: 'Accept or reject booking requests',
             onTap: () {
-              Navigator.pushNamed(context, '/owner_bookings');
+              Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerBookingsScreen()));
             },
           ),
           _divider(),

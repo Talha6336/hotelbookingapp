@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hotelbookingapp/presentation/customer/customer_bookings_screen.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
@@ -429,7 +430,12 @@ class ProfileScreen extends StatelessWidget {
             title: 'My Bookings',
             subtitle: 'View booking status',
             onTap: () {
-              Navigator.pushNamed(context, '/my_bookings');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CustomerBookingsScreen(),
+                ),
+              );
             },
           ),
           _divider(),

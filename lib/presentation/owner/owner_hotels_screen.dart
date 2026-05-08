@@ -19,7 +19,9 @@ class OwnerHotelsScreen extends StatefulWidget {
 class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatingController;
+ 
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
 
   @override
@@ -34,7 +36,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
   @override
   void dispose() {
     _floatingController.dispose();
-    _searchController.dispose();
+    // _searchController.dispose();
     super.dispose();
   }
 
@@ -131,10 +133,24 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                 final analytics = _computeAnalytics(docs);
 
                 final filteredDocs = docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final name = (data['name'] ?? '').toString().toLowerCase();
-                  return name.contains(_searchQuery.toLowerCase());
-                }).toList();
+                final data = doc.data() as Map<String, dynamic>;
+
+                final query = _searchQuery.trim().toLowerCase();
+
+                if (query.isEmpty) return true;
+
+                final name = (data['name'] ?? '').toString().toLowerCase();
+                final city = (data['city'] ?? '').toString().toLowerCase();
+                final address = (data['address'] ?? '').toString().toLowerCase();
+                final category = (data['category'] ?? '').toString().toLowerCase();
+                final price = (data['pricePerNight'] ?? '').toString().toLowerCase();
+
+                return name.contains(query) ||
+                    city.contains(query) ||
+                    address.contains(query) ||
+                    category.contains(query) ||
+                    price.contains(query);
+              }).toList();
 
                 return CustomScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -217,11 +233,27 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
+
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+           ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              ),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+             
               Text(
                 "My Hotels",
                 style: TextStyle(
@@ -245,35 +277,70 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
   }
 
   Widget _buildSearchAndFilter() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _glassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: "Search your hotels...",
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                  icon: Icon(
-                    Icons.search,
-                    color: Colors.white.withOpacity(0.5),
-                  ),
-                  border: InputBorder.none,
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    child: Row(
+      children: [
+        Expanded(
+          child: _glassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              style: const TextStyle(color: Colors.white),
+              keyboardType: TextInputType.text,
+              textInputAction: TextInputAction.search,
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val;
+                });
+
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted && !_searchFocusNode.hasFocus) {
+                    _searchFocusNode.requestFocus();
+                  }
+                });
+              },
+              decoration: InputDecoration(
+                hintText: "Search your hotels...",
+                hintStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
                 ),
+                icon: Icon(
+                  Icons.search,
+                  color: Colors.white.withOpacity(0.5),
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white54,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              _searchFocusNode.requestFocus();
+                            }
+                          });
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          _glassIconButton(Icons.tune_rounded),
-        ],
-      ),
-    );
-  }
+        ),
+        const SizedBox(width: 12),
+        _glassIconButton(Icons.tune_rounded),
+      ],
+    ),
+  );
+}
 
   Widget _buildTopAnalytics(Map<String, dynamic> analytics) {
     return SizedBox(

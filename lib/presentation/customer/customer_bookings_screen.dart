@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,19 +18,28 @@ class CustomerBookingsScreen extends StatefulWidget {
 class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatingController;
+
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
   String _selectedTab = 'All';
+  String _searchQuery = '';
+  bool _showSearch = false;
 
   final List<String> _tabs = [
     'All',
     'Pending',
     'Approved',
+    'Accepted',
     'Completed',
     'Cancelled',
+    'Rejected',
   ];
 
   @override
   void initState() {
     super.initState();
+
     _floatingController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 12),
@@ -39,12 +49,17 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
   @override
   void dispose() {
     _floatingController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
   Stream<QuerySnapshot> _getBookingsStream() {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const Stream.empty();
+
+    if (user == null) {
+      return const Stream.empty();
+    }
 
     return FirebaseFirestore.instance
         .collection('bookings')
@@ -53,26 +68,115 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         .snapshots();
   }
 
+  String _normalizeStatus(dynamic value) {
+    final status = value?.toString().toLowerCase() ?? '';
+
+    if (status == 'accepted') return 'approved';
+
+    return status;
+  }
+
   Map<String, int> _calculateStats(List<QueryDocumentSnapshot> docs) {
-    int pending = 0, approved = 0, cancelled = 0, completed = 0;
+    int pending = 0;
+    int approved = 0;
+    int cancelled = 0;
+    int completed = 0;
+    int rejected = 0;
+
     for (var doc in docs) {
-      final status =
-          (doc.data() as Map<String, dynamic>)['status']
-              ?.toString()
-              .toLowerCase() ??
-          '';
+      final data = doc.data() as Map<String, dynamic>;
+      final status = _normalizeStatus(data['status']);
+
       if (status == 'pending') pending++;
       if (status == 'approved') approved++;
       if (status == 'cancelled') cancelled++;
       if (status == 'completed') completed++;
+      if (status == 'rejected') rejected++;
     }
+
     return {
       'Total': docs.length,
       'Pending': pending,
       'Approved': approved,
       'Cancelled': cancelled,
       'Completed': completed,
+      'Rejected': rejected,
     };
+  }
+
+  List<QueryDocumentSnapshot> _filterBookings(List<QueryDocumentSnapshot> docs) {
+    final query = _searchQuery.trim().toLowerCase();
+    final selectedTab = _selectedTab.toLowerCase();
+
+    return docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      final status = _normalizeStatus(data['status']);
+
+      final matchesTab =
+          selectedTab == 'all' ||
+          status == selectedTab ||
+          (selectedTab == 'accepted' && status == 'approved');
+
+      if (!matchesTab) {
+        return false;
+      }
+
+      if (query.isEmpty) {
+        return true;
+      }
+
+      final hotelName = (data['hotelName'] ?? '').toString().toLowerCase();
+      final customerName =
+          (data['customerName'] ?? '').toString().toLowerCase();
+      final totalPrice = (data['totalPrice'] ?? '').toString().toLowerCase();
+      final totalNights = (data['totalNights'] ?? '').toString().toLowerCase();
+      final bookingStatus = (data['status'] ?? '').toString().toLowerCase();
+      final bookingId = doc.id.toLowerCase();
+
+      return hotelName.contains(query) ||
+          customerName.contains(query) ||
+          totalPrice.contains(query) ||
+          totalNights.contains(query) ||
+          bookingStatus.contains(query) ||
+          bookingId.contains(query);
+    }).toList();
+  }
+
+  void _toggleSearch() {
+    setState(() {
+      _showSearch = !_showSearch;
+    });
+
+    if (_showSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _searchFocusNode.requestFocus();
+        }
+      });
+    } else {
+      _searchController.clear();
+
+      setState(() {
+        _searchQuery = '';
+      });
+
+      FocusScope.of(context).unfocus();
+    }
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+
+    setState(() {
+      _searchQuery = '';
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _searchFocusNode.requestFocus();
+      }
+    });
   }
 
   @override
@@ -81,12 +185,12 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // 1. Premium Background
           Container(
-            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
+            decoration: const BoxDecoration(
+              gradient: AppColors.darkGradient,
+            ),
           ),
 
-          // 2. Animated Floating Circles
           AnimatedBuilder(
             animation: _floatingController,
             builder: (context, child) {
@@ -94,16 +198,14 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 children: [
                   _buildFloatingCircle(
                     size: 250,
-                    top:
-                        -50 +
+                    top: -50 +
                         (math.sin(_floatingController.value * math.pi) * 30),
                     left: -50,
                     color: AppColors.primary.withOpacity(0.3),
                   ),
                   _buildFloatingCircle(
                     size: 300,
-                    bottom:
-                        100 +
+                    bottom: 100 +
                         (math.cos(_floatingController.value * math.pi) * 40),
                     right: -100,
                     color: AppColors.secondary.withOpacity(0.2),
@@ -113,7 +215,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             },
           ),
 
-          // 3. Main Content
           SafeArea(
             child: StreamBuilder<QuerySnapshot>(
               stream: _getBookingsStream(),
@@ -124,48 +225,57 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
 
                 if (snapshot.hasError) {
                   return _buildEmptyState(
-                    "Error loading bookings",
-                    "Please check your connection.",
+                    'Error loading bookings',
+                    'Please check your connection.',
                     Icons.error_outline,
+                    showButton: false,
                   );
                 }
 
                 final docs = snapshot.data?.docs ?? [];
                 final stats = _calculateStats(docs);
-
-                final filteredDocs = _selectedTab == 'All'
-                    ? docs
-                    : docs
-                          .where(
-                            (d) =>
-                                ((d.data() as Map)['status'] ?? '')
-                                    .toString()
-                                    .toLowerCase() ==
-                                _selectedTab.toLowerCase(),
-                          )
-                          .toList();
+                final filteredDocs = _filterBookings(docs);
 
                 return CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    SliverToBoxAdapter(child: _buildAppBar()),
+                    SliverToBoxAdapter(
+                      child: _buildAppBar(),
+                    ),
+
+                    if (_showSearch)
+                      SliverToBoxAdapter(
+                        child: _buildSearchBar(),
+                      ),
+
                     if (docs.isNotEmpty)
-                      SliverToBoxAdapter(child: _buildSummaryCards(stats)),
-                    SliverToBoxAdapter(child: _buildTabs()),
+                      SliverToBoxAdapter(
+                        child: _buildSummaryCards(stats),
+                      ),
+
+                    SliverToBoxAdapter(
+                      child: _buildTabs(),
+                    ),
+
                     if (docs.isEmpty)
                       SliverFillRemaining(
                         child: _buildEmptyState(
-                          "No bookings yet",
-                          "Start exploring luxury hotels.",
+                          'No bookings yet',
+                          'Start exploring luxury hotels.',
                           Icons.flight_takeoff,
                         ),
                       )
                     else if (filteredDocs.isEmpty)
                       SliverFillRemaining(
                         child: _buildEmptyState(
-                          "No $_selectedTab bookings",
-                          "You don't have any $_selectedTab reservations.",
+                          _searchQuery.isNotEmpty
+                              ? 'No matching bookings'
+                              : 'No $_selectedTab bookings',
+                          _searchQuery.isNotEmpty
+                              ? 'Try searching another hotel name, status, price, or booking ID.'
+                              : "You don't have any $_selectedTab reservations.",
                           Icons.search_off,
+                          showButton: false,
                         ),
                       )
                     else
@@ -176,21 +286,21 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                           right: 20,
                         ),
                         sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final data =
-                                filteredDocs[index].data()
-                                    as Map<String, dynamic>;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _PremiumBookingCard(
-                                bookingData: data,
-                                bookingId: filteredDocs[index].id,
-                              ),
-                            );
-                          }, childCount: filteredDocs.length),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final data = filteredDocs[index].data()
+                                  as Map<String, dynamic>;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _PremiumBookingCard(
+                                  bookingData: data,
+                                  bookingId: filteredDocs[index].id,
+                                ),
+                              );
+                            },
+                            childCount: filteredDocs.length,
+                          ),
                         ),
                       ),
                   ],
@@ -207,38 +317,130 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "My Bookings",
-                style: TextStyle(
+          ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
                   color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+                  size: 18,
                 ),
+                onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 4),
-              Text(
-                "Manage your hotel reservations",
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'My Bookings',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  'Manage your hotel reservations',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
-          Row(
-            children: [
-              _circleGlassButton(Icons.search),
-              const SizedBox(width: 12),
-              _circleGlassButton(Icons.filter_list),
-            ],
+
+          GestureDetector(
+            onTap: _toggleSearch,
+            child: _circleGlassButton(
+              _showSearch ? Icons.close_rounded : Icons.search,
+            ),
           ),
+
+          const SizedBox(width: 12),
+
+          _circleGlassButton(Icons.filter_list),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            height: 58,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.20),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  color: Colors.white.withOpacity(0.65),
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    style: const TextStyle(color: Colors.white),
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && !_searchFocusNode.hasFocus) {
+                          _searchFocusNode.requestFocus();
+                        }
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search hotel, status, price...',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.50),
+                      ),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+
+                if (_searchQuery.isNotEmpty)
+                  GestureDetector(
+                    onTap: _clearSearch,
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: Colors.white.withOpacity(0.65),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -251,12 +453,25 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildStatCard("Total", stats['Total']!, const Color(0xFF2196F3)),
-          _buildStatCard("Pending", stats['Pending']!, const Color(0xFFFF9800)),
           _buildStatCard(
-            "Approved",
-            stats['Approved']!,
+            'Total',
+            stats['Total'] ?? 0,
+            const Color(0xFF2196F3),
+          ),
+          _buildStatCard(
+            'Pending',
+            stats['Pending'] ?? 0,
+            const Color(0xFFFF9800),
+          ),
+          _buildStatCard(
+            'Approved',
+            stats['Approved'] ?? 0,
             const Color(0xFF4CAF50),
+          ),
+          _buildStatCard(
+            'Cancelled',
+            stats['Cancelled'] ?? 0,
+            const Color(0xFFF44336),
           ),
         ],
       ),
@@ -271,7 +486,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+        ),
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -285,7 +502,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 13,
-                
               ),
             ),
             const SizedBox(height: 4),
@@ -314,16 +530,27 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         itemBuilder: (context, index) {
           final tab = _tabs[index];
           final isSelected = _selectedTab == tab;
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedTab = tab),
+            onTap: () {
+              setState(() {
+                _selectedTab = tab;
+              });
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 10,
+              ),
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? const LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
+                        colors: [
+                          AppColors.primary,
+                          AppColors.secondary,
+                        ],
                       )
                     : null,
                 color: isSelected ? null : Colors.white.withOpacity(0.08),
@@ -371,9 +598,15 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.1),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+            ),
           ),
-          child: Icon(icon, color: Colors.white, size: 20),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
       ),
     );
@@ -398,55 +631,79 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           child: Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(String title, String subtitle, IconData icon) {
+  Widget _buildEmptyState(
+    String title,
+    String subtitle,
+    IconData icon, {
+    bool showButton = true,
+  }) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 80, color: Colors.white.withOpacity(0.2)),
-          const SizedBox(height: 20),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 26),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 80,
+              color: Colors.white.withOpacity(0.2),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              /* Navigate to Home Tab */
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              foregroundColor: AppColors.backgroundDark1,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            child: const Text(
-              "Explore Hotels",
-              style: TextStyle(fontWeight: FontWeight.bold),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 15,
+              ),
             ),
-          ),
-        ],
+            if (showButton) ...[
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: AppColors.backgroundDark1,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Explore Hotels',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -455,21 +712,20 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(20, 100, 20, 20),
       itemCount: 4,
-      itemBuilder: (context, index) => Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        height: 160,
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(24),
-        ),
-      ),
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          height: 160,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+          ),
+        );
+      },
     );
   }
 }
 
-// -----------------------------------------------------------------------------
-// REUSABLE PREMIUM BOOKING CARD
-// -----------------------------------------------------------------------------
 class _PremiumBookingCard extends StatefulWidget {
   final Map<String, dynamic> bookingData;
   final String bookingId;
@@ -490,11 +746,13 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'approved':
-        return const Color(0xFF4CAF50); // Success
+      case 'accepted':
+        return const Color(0xFF4CAF50);
       case 'pending':
-        return const Color(0xFFFF9800); // Pending
+        return const Color(0xFFFF9800);
       case 'cancelled':
-        return const Color(0xFFF44336); // Cancelled
+      case 'rejected':
+        return const Color(0xFFF44336);
       case 'completed':
         return AppColors.primary;
       default:
@@ -502,56 +760,76 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     }
   }
 
-  String _formatDate(Timestamp? timestamp) {
-    if (timestamp == null) return 'N/A';
-    return DateFormat('MMM dd, yyyy').format(timestamp.toDate());
+  String _formatDate(dynamic value) {
+    if (value == null) return 'N/A';
+
+    if (value is Timestamp) {
+      return DateFormat('MMM dd, yyyy').format(value.toDate());
+    }
+
+    return value.toString();
   }
 
   Future<void> _cancelBooking() async {
     final bool? confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.backgroundDark1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
-          'Cancel Booking',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Are you sure you want to cancel this booking request?',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Keep Booking',
-              style: TextStyle(color: Colors.white54),
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDark1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Cancel Booking',
+            style: TextStyle(
+              color: Colors.white,
             ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Yes, Cancel',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
+          content: const Text(
+            'Are you sure you want to cancel this booking request?',
+            style: TextStyle(
+              color: Colors.white70,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(
+                'Keep Booking',
+                style: TextStyle(
+                  color: Colors.white54,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                'Yes, Cancel',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
 
     if (confirm != true) return;
 
-    setState(() => _isCancelling = true);
+    setState(() {
+      _isCancelling = true;
+    });
 
     try {
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(widget.bookingId)
-          .update({'status': 'cancelled'});
+          .update({
+        'status': 'cancelled',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
       if (!mounted) return;
 
@@ -564,6 +842,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
       );
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to cancel booking. Please try again.'),
@@ -572,7 +851,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         ),
       );
     } finally {
-      if (mounted) setState(() => _isCancelling = false);
+      if (mounted) {
+        setState(() {
+          _isCancelling = false;
+        });
+      }
     }
   }
 
@@ -584,23 +867,39 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
+      child: const Icon(
+        Icons.hotel,
+        color: Colors.white54,
+        size: 32,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final status =
-        widget.bookingData['status']?.toString().toUpperCase() ?? 'PENDING';
-    final statusColor = _getStatusColor(widget.bookingData['status'] ?? '');
-    final hotelName = widget.bookingData['hotelName'] ?? 'Luxury Hotel';
-    // --- GRAB THE IMAGE URL HERE ---
-    final hotelImage = widget.bookingData['hotelImage'] ?? '';
-    final price = widget.bookingData['totalPrice'] ?? 0;
-    final nights = widget.bookingData['totalNights'] ?? 1;
+    final String rawStatus =
+        widget.bookingData['status']?.toString().toLowerCase() ?? 'pending';
+
+    final String status = rawStatus.toUpperCase();
+    final Color statusColor = _getStatusColor(rawStatus);
+
+    final String hotelName =
+        widget.bookingData['hotelName'] ?? 'Luxury Hotel';
+
+    final String hotelImage =
+        widget.bookingData['hotelImage'] ??
+        widget.bookingData['imageUrl'] ??
+        '';
+
+    final num price = widget.bookingData['totalPrice'] ?? 0;
+    final int nights = widget.bookingData['totalNights'] ?? 1;
 
     return GestureDetector(
-      onTap: () => setState(() => _isExpanded = !_isExpanded),
+      onTap: () {
+        setState(() {
+          _isExpanded = !_isExpanded;
+        });
+      },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
@@ -619,13 +918,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             ),
             child: Column(
               children: [
-                // Top Main Section
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- THE FIX: NEW IMAGE DISPLAY WIDGET ---
                       ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: hotelImage.toString().isNotEmpty
@@ -634,20 +931,20 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                 width: 80,
                                 height: 80,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    _buildImagePlaceholder(),
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildImagePlaceholder();
+                                },
                               )
                             : _buildImagePlaceholder(),
                       ),
 
                       const SizedBox(width: 16),
-                      // Details
+
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
                                   child: Text(
@@ -661,7 +958,9 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
+
                                 const SizedBox(width: 8),
+
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
@@ -686,20 +985,24 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                 ),
                               ],
                             ),
+
                             const SizedBox(height: 8),
+
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                "${_formatDate(widget.bookingData['checkInDate'])} - ${_formatDate(widget.bookingData['checkOutDate'])}",
+                                '${_formatDate(widget.bookingData['checkInDate'])} - ${_formatDate(widget.bookingData['checkOutDate'])}',
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
                                   fontSize: 13,
                                 ),
                               ),
                             ),
+
                             const SizedBox(height: 8),
+
                             Text(
-                              "Rs. ${price.toInt()} • $nights night(s)",
+                              'Rs. ${price.toInt()} • $nights night(s)',
                               style: const TextStyle(
                                 color: AppColors.accent,
                                 fontSize: 14,
@@ -713,9 +1016,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                   ),
                 ),
 
-                // Expandable Extra Details & Buttons
                 AnimatedCrossFade(
-                  firstChild: const SizedBox(width: double.infinity, height: 0),
+                  firstChild: const SizedBox(
+                    width: double.infinity,
+                    height: 0,
+                  ),
                   secondChild: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Column(
@@ -724,14 +1029,20 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                           color: Colors.white.withOpacity(0.1),
                           height: 24,
                         ),
-                        _buildDetailRow("Booking ID", widget.bookingId),
                         _buildDetailRow(
-                          "Guest Name",
+                          'Booking ID',
+                          widget.bookingId,
+                        ),
+                        _buildDetailRow(
+                          'Guest Name',
                           widget.bookingData['customerName'] ?? 'N/A',
                         ),
-                        _buildDetailRow("Payment Status", "Pay at Hotel"),
+                        _buildDetailRow(
+                          'Payment Status',
+                          'Pay at Hotel',
+                        ),
                         const SizedBox(height: 16),
-                        _buildActionButtons(status.toLowerCase()),
+                        _buildActionButtons(rawStatus),
                       ],
                     ),
                   ),
@@ -803,24 +1114,26 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                     strokeWidth: 2,
                   ),
                 )
-              : const Text("Cancel Request"),
+              : const Text('Cancel Request'),
         ),
       );
-    } else if (status == 'approved') {
+    } else if (status == 'approved' || status == 'accepted') {
       return Row(
         children: [
           Expanded(
             child: OutlinedButton(
               onPressed: () {},
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                side: BorderSide(
+                  color: Colors.white.withOpacity(0.3),
+                ),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Text(
-                "Get Directions",
+                'Get Directions',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -838,8 +1151,10 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                 ),
               ),
               child: const Text(
-                "View Details",
-                style: TextStyle(fontWeight: FontWeight.bold),
+                'View Details',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -860,7 +1175,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          child: const Text("Book Again"),
+          child: const Text('Book Again'),
         ),
       );
     }

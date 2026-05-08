@@ -1,14 +1,15 @@
 import 'dart:ui';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import 'add_hotel_screen.dart';
 import 'owner_bookings_screen.dart';
 import 'owner_profile_screen.dart';
-import 'add_hotel_screen.dart';
 import 'owner_hotels_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
@@ -22,18 +23,18 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatingController;
   late AnimationController _entranceController;
+
   int _bottomNavIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Background Floating Animation
+
     _floatingController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
     )..repeat(reverse: true);
 
-    // Staggered Entrance Animation
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -47,45 +48,113 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     super.dispose();
   }
 
-  // Real-time stream for the logged-in owner's bookings
-  Stream<QuerySnapshot> _getOwnerBookingsStream() {
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _getCurrentOwnerStream() {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return const Stream.empty();
+
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> _getOwnerBookingsStream() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Stream.empty();
+    }
 
     return FirebaseFirestore.instance
         .collection('bookings')
         .where('ownerId', isEqualTo: user.uid)
-        .orderBy('createdAt', descending: true)
         .snapshots();
   }
 
-  // Compute live analytics from the stream
-  Map<String, dynamic> _computeAnalytics(List<QueryDocumentSnapshot> docs) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> _getOwnerHotelsStream() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return const Stream.empty();
+    }
+
+    return FirebaseFirestore.instance
+        .collection('hotels')
+        .where('ownerId', isEqualTo: user.uid)
+        .snapshots();
+  }
+
+  Map<String, dynamic> _computeAnalytics({
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>> bookingDocs,
+    required List<QueryDocumentSnapshot<Map<String, dynamic>>> hotelDocs,
+  }) {
     double totalRevenue = 0;
     int pending = 0;
-    int active = 0;
-    int completed = 0;
+    int accepted = 0;
+    int rejected = 0;
+    int cancelled = 0;
 
-    for (var doc in docs) {
-      final data = doc.data() as Map<String, dynamic>;
+    for (final doc in bookingDocs) {
+      final data = doc.data();
       final status = data['status']?.toString().toLowerCase() ?? '';
 
-      if (status == 'approved' || status == 'completed') {
-        totalRevenue += (data['totalPrice'] ?? 0).toDouble();
-      }
+      final totalPriceValue = data['totalPrice'];
+      final double totalPrice = totalPriceValue is num
+          ? totalPriceValue.toDouble()
+          : double.tryParse(totalPriceValue.toString()) ?? 0.0;
 
-      if (status == 'pending') pending++;
-      if (status == 'approved') active++;
-      if (status == 'completed') completed++;
+      if (status == 'accepted') {
+        totalRevenue += totalPrice;
+        accepted++;
+      } else if (status == 'pending') {
+        pending++;
+      } else if (status == 'rejected') {
+        rejected++;
+      } else if (status == 'cancelled') {
+        cancelled++;
+      }
     }
 
     return {
       'revenue': totalRevenue,
       'pending': pending,
-      'active': active,
-      'completed': completed,
-      'total': docs.length,
+      'accepted': accepted,
+      'rejected': rejected,
+      'cancelled': cancelled,
+      'totalBookings': bookingDocs.length,
+      'totalHotels': hotelDocs.length,
     };
+  }
+
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortBookingsByCreatedAt(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final sortedDocs = [...docs];
+
+    sortedDocs.sort((a, b) {
+      final aCreatedAt = a.data()['createdAt'];
+      final bCreatedAt = b.data()['createdAt'];
+
+      if (aCreatedAt is Timestamp && bCreatedAt is Timestamp) {
+        return bCreatedAt.compareTo(aCreatedAt);
+      }
+
+      return 0;
+    });
+
+    return sortedDocs;
+  }
+
+  void _openAddHotelScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddHotelScreen(),
+      ),
+    );
   }
 
   @override
@@ -95,12 +164,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // 1. Luxury Dark Gradient Background
           Container(
-            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
+            decoration: const BoxDecoration(
+              gradient: AppColors.darkGradient,
+            ),
           ),
 
-          // 2. Animated Floating Orbs
           AnimatedBuilder(
             animation: _floatingController,
             builder: (context, child) {
@@ -108,16 +177,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                 children: [
                   _buildFloatingCircle(
                     size: 300,
-                    top:
-                        -100 +
+                    top: -100 +
                         (math.sin(_floatingController.value * math.pi) * 40),
                     left: -100,
                     color: AppColors.primary.withOpacity(0.25),
                   ),
                   _buildFloatingCircle(
                     size: 400,
-                    bottom:
-                        50 +
+                    bottom: 50 +
                         (math.cos(_floatingController.value * math.pi) * 50),
                     right: -150,
                     color: AppColors.secondary.withOpacity(0.2),
@@ -127,66 +194,152 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             },
           ),
 
-          // 3. Main Scrollable Dashboard
           SafeArea(
             bottom: false,
-            child: StreamBuilder<QuerySnapshot>(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: _getOwnerBookingsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+              builder: (context, bookingSnapshot) {
+                if (bookingSnapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: AppColors.accent),
+                    child: CircularProgressIndicator(
+                      color: AppColors.accent,
+                    ),
                   );
                 }
 
-                final docs = snapshot.data?.docs ?? [];
-                final analytics = _computeAnalytics(docs);
+                if (bookingSnapshot.hasError) {
+                  return _buildFullScreenMessage(
+                    icon: Icons.error_outline_rounded,
+                    title: 'Could not load dashboard',
+                    subtitle: 'Please check your Firebase setup.',
+                  );
+                }
 
-                return CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildAppBar()),
-                    SliverToBoxAdapter(child: const SizedBox(height: 16)),
-                    SliverToBoxAdapter(child: _buildHeroCard(analytics)),
-                    SliverToBoxAdapter(child: const SizedBox(height: 24)),
-                    SliverToBoxAdapter(child: _buildQuickActions(context)),
-                    SliverToBoxAdapter(child: const SizedBox(height: 24)),
-                    SliverToBoxAdapter(child: _buildStatsGrid(analytics)),
-                    SliverToBoxAdapter(child: const SizedBox(height: 24)),
-                    SliverToBoxAdapter(child: _buildChartPlaceholder()),
-                    SliverToBoxAdapter(child: const SizedBox(height: 24)),
-                    SliverToBoxAdapter(
-                      child: _buildSectionTitle("Recent Bookings", "View All"),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        bottom: 120,
-                      ), // Bottom padding for nav bar
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate((context, index) {
-                          if (index >= docs.length || index > 5)
-                            return null; // Show only top 5 recent
-                          final bookingData =
-                              docs[index].data() as Map<String, dynamic>;
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: _OwnerBookingCard(
-                              bookingData: bookingData,
-                              bookingId: docs[index].id,
+                final bookingDocs = bookingSnapshot.data?.docs ?? [];
+
+                return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _getOwnerHotelsStream(),
+                  builder: (context, hotelSnapshot) {
+                    final hotelDocs = hotelSnapshot.data?.docs ?? [];
+
+                    final analytics = _computeAnalytics(
+                      bookingDocs: bookingDocs,
+                      hotelDocs: hotelDocs,
+                    );
+
+                    final sortedBookings = _sortBookingsByCreatedAt(
+                      bookingDocs,
+                    );
+
+                    return CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        SliverToBoxAdapter(child: _buildAppBar()),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 16),
+                        ),
+
+                        SliverToBoxAdapter(
+                          child: _buildHeroCard(analytics),
+                        ),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 24),
+                        ),
+
+                        SliverToBoxAdapter(
+                          child: _buildStatsGrid(analytics),
+                        ),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 24),
+                        ),
+
+                        SliverToBoxAdapter(
+                          child: _buildBookingOverview(analytics),
+                        ),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(height: 24),
+                        ),
+
+                        SliverToBoxAdapter(
+                          child: _buildSectionTitle(
+                            title: 'Recent Bookings',
+                            action: 'View All',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const OwnerBookingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        if (sortedBookings.isEmpty)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                0,
+                                20,
+                                160,
+                              ),
+                              child: _buildEmptyRecentBookings(),
                             ),
-                          );
-                        }, childCount: math.min(docs.length, 5)),
-                      ),
-                    ),
-                  ],
+                          )
+                        else
+                          SliverPadding(
+                            padding: const EdgeInsets.only(
+                              left: 20,
+                              right: 20,
+                              bottom: 160,
+                            ),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  if (index >= sortedBookings.length ||
+                                      index >= 5) {
+                                    return null;
+                                  }
+
+                                  final doc = sortedBookings[index];
+                                  final bookingData = doc.data();
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: _OwnerBookingCard(
+                                      bookingData: bookingData,
+                                      bookingId: doc.id,
+                                    ),
+                                  );
+                                },
+                                childCount: math.min(
+                                  sortedBookings.length,
+                                  5,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
           ),
 
-          // 4. Floating Bottom Navigation Bar
+          Positioned(
+            right: 24,
+            bottom: 110,
+            child: _buildAddHotelFloatingButton(),
+          ),
+
           Positioned(
             bottom: 24,
             left: 24,
@@ -198,55 +351,88 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ===========================================================================
-  // UI COMPONENTS
-  // ===========================================================================
-
   Widget _buildAppBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: _getCurrentOwnerStream(),
+      builder: (context, snapshot) {
+        final user = FirebaseAuth.instance.currentUser;
+        final userData = snapshot.data?.data();
+
+        final String ownerName = userData?['name'] ?? 'Hotel Owner';
+        final String email = userData?['email'] ?? user?.email ?? '';
+        final String profileImage = userData?['profileImage'] ?? '';
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Welcome Back 👋",
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Welcome Back 👋',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      ownerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    if (email.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.55),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                "Hotel Manager",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _glassIconButton(
-                Icons.notifications_none_rounded,
-                showBadge: true,
-              ),
+
               const SizedBox(width: 12),
-              const CircleAvatar(
-                radius: 22,
-                backgroundImage: NetworkImage(
-                  'https://i.pravatar.cc/150?img=60',
-                ), // Manager placeholder
+
+              Row(
+                children: [
+                  _glassIconButton(
+                    Icons.notifications_none_rounded,
+                    showBadge: true,
+                  ),
+                  const SizedBox(width: 12),
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: Colors.white.withOpacity(0.12),
+                    backgroundImage:
+                        profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                    child: profileImage.isEmpty
+                        ? const Icon(
+                            Icons.person_rounded,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -256,6 +442,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
       decimalDigits: 0,
     );
 
+    final double revenue = analytics['revenue'] ?? 0.0;
+    final int pending = analytics['pending'] ?? 0;
+    final int accepted = analytics['accepted'] ?? 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: _glassCard(
@@ -263,52 +453,21 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Total Revenue",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.trending_up,
-                        color: Color(0xFF4CAF50),
-                        size: 14,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        "+12.5%",
-                        style: TextStyle(
-                          color: Color(0xFF4CAF50),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            Text(
+              'Total Revenue',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
             ),
+
             const SizedBox(height: 8),
+
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                currencyFormat.format(analytics['revenue'] ?? 0),
+                currencyFormat.format(revenue),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
@@ -317,17 +476,19 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
+
             Row(
               children: [
                 _buildMiniStat(
-                  Icons.book_online,
-                  "${analytics['active']} Active Stays",
+                  Icons.check_circle_rounded,
+                  '$accepted Accepted',
                 ),
                 const SizedBox(width: 20),
                 _buildMiniStat(
-                  Icons.pending_actions,
-                  "${analytics['pending']} Pending Req.",
+                  Icons.pending_actions_rounded,
+                  '$pending Pending',
                 ),
               ],
             ),
@@ -340,7 +501,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   Widget _buildMiniStat(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.accent, size: 16),
+        Icon(
+          icon,
+          color: AppColors.accent,
+          size: 16,
+        ),
         const SizedBox(width: 6),
         Text(
           text,
@@ -354,90 +519,58 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // 1. Add 'BuildContext context' to the parameters so we can navigate
-  Widget _buildQuickActions(BuildContext context) {
-    final actions = [
-      {"icon": Icons.add_business_rounded, "label": "Add Hotel"},
-      {"icon": Icons.meeting_room_rounded, "label": "Rooms"},
-      {"icon": Icons.receipt_long_rounded, "label": "Requests"},
-      {"icon": Icons.analytics_rounded, "label": "Analytics"},
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: actions.map((a) {
-          // 2. Wrap the return in a GestureDetector
-          return GestureDetector(
-            onTap: () {
-              // 3. Route based on the label that was tapped
-              if (a["label"] == "Add Hotel") {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AddHotelScreen(),
-                  ),
-                );
-              } else {
-                // Placeholder for the other buttons
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${a["label"]} screen coming soon!'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
-            // Use HitTestBehavior.opaque so tapping the empty space
-            // between the icon and the text still triggers the tap!
-            behavior: HitTestBehavior.opaque,
-            child: Column(
-              children: [
-                _glassIconButton(
-                  a["icon"] as IconData,
-                  size: 56,
-                  iconSize: 26,
-                  isGradient: true,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  a["label"] as String,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildStatsGrid(Map<String, dynamic> analytics) {
+    final int totalHotels = analytics['totalHotels'] ?? 0;
+    final int totalBookings = analytics['totalBookings'] ?? 0;
+    final int pending = analytics['pending'] ?? 0;
+    final int accepted = analytics['accepted'] ?? 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _buildStatSquare(
-              "Total Bookings",
-              analytics['total'].toString(),
-              Icons.library_books_rounded,
-              Colors.blue,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatSquare(
+                  'Hotels',
+                  totalHotels.toString(),
+                  Icons.business_rounded,
+                  Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatSquare(
+                  'Bookings',
+                  totalBookings.toString(),
+                  Icons.library_books_rounded,
+                  Colors.deepPurpleAccent,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _buildStatSquare(
-              "Completed",
-              analytics['completed'].toString(),
-              Icons.check_circle_rounded,
-              const Color(0xFF4CAF50),
-            ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatSquare(
+                  'Pending',
+                  pending.toString(),
+                  Icons.pending_actions_rounded,
+                  Colors.orangeAccent,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatSquare(
+                  'Accepted',
+                  accepted.toString(),
+                  Icons.check_circle_rounded,
+                  const Color(0xFF4CAF50),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -461,7 +594,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(
+              icon,
+              color: color,
+              size: 20,
+            ),
           ),
           const SizedBox(height: 16),
           Text(
@@ -485,7 +622,13 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  Widget _buildChartPlaceholder() {
+  Widget _buildBookingOverview(Map<String, dynamic> analytics) {
+    final int pending = analytics['pending'] ?? 0;
+    final int accepted = analytics['accepted'] ?? 0;
+    final int rejected = analytics['rejected'] ?? 0;
+    final int cancelled = analytics['cancelled'] ?? 0;
+    final int total = analytics['totalBookings'] ?? 0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: _glassCard(
@@ -494,61 +637,113 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Revenue Overview",
+              'Booking Overview',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 150,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildChartBar(0.4, "Jan"), _buildChartBar(0.6, "Feb"),
-                  _buildChartBar(0.5, "Mar"), _buildChartBar(0.9, "Apr"),
-                  _buildChartBar(0.7, "May"),
-                  _buildChartBar(1.0, "Jun"), // Jun is peak
-                ],
+
+            const SizedBox(height: 18),
+
+            if (total == 0)
+              Text(
+                'No booking data available yet.',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.65),
+                  fontSize: 14,
+                ),
+              )
+            else ...[
+              _buildOverviewRow(
+                label: 'Accepted',
+                value: accepted,
+                total: total,
+                color: const Color(0xFF4CAF50),
               ),
-            ),
+              const SizedBox(height: 14),
+              _buildOverviewRow(
+                label: 'Pending',
+                value: pending,
+                total: total,
+                color: Colors.orangeAccent,
+              ),
+              const SizedBox(height: 14),
+              _buildOverviewRow(
+                label: 'Rejected',
+                value: rejected,
+                total: total,
+                color: Colors.redAccent,
+              ),
+              const SizedBox(height: 14),
+              _buildOverviewRow(
+                label: 'Cancelled',
+                value: cancelled,
+                total: total,
+                color: Colors.deepOrangeAccent,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChartBar(double heightFactor, String label) {
+  Widget _buildOverviewRow({
+    required String label,
+    required int value,
+    required int total,
+    required Color color,
+  }) {
+    final double percent = total == 0 ? 0 : value / total;
+
     return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.easeOutCubic,
-          height: 120 * heightFactor,
-          width: 30,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.accent, AppColors.accent.withOpacity(0.3)],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.75),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-            borderRadius: BorderRadius.circular(6),
-          ),
+            Text(
+              '$value',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
+
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: LinearProgressIndicator(
+            value: percent,
+            minHeight: 8,
+            backgroundColor: Colors.white.withOpacity(0.12),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSectionTitle(String title, String action) {
+  Widget _buildSectionTitle({
+    required String title,
+    required String action,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       child: Row(
@@ -562,12 +757,15 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               fontWeight: FontWeight.w800,
             ),
           ),
-          Text(
-            action,
-            style: const TextStyle(
-              color: AppColors.accent,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          GestureDetector(
+            onTap: onTap,
+            child: Text(
+              action,
+              style: const TextStyle(
+                color: AppColors.accent,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
@@ -575,9 +773,79 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  // ===========================================================================
-  // NAVIGATION & HELPERS
-  // ===========================================================================
+  Widget _buildAddHotelFloatingButton() {
+    return GestureDetector(
+      onTap: _openAddHotelScreen,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 22,
+          vertical: 16,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.accent,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accent.withOpacity(0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.add_business_rounded,
+              color: AppColors.backgroundDark1,
+              size: 25,
+            ),
+            SizedBox(width: 10),
+            Text(
+              'Add Hotel',
+              style: TextStyle(
+                color: AppColors.backgroundDark1,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyRecentBookings() {
+    return _glassCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.receipt_long_rounded,
+            color: AppColors.accent,
+            size: 60,
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'No recent bookings',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Customer booking requests will appear here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.65),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildFloatingNavBar() {
     return ClipRRect(
@@ -598,10 +866,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildNavItem(0, Icons.dashboard_rounded, "Dashboard"),
-              _buildNavItem(1, Icons.business_rounded, "Hotels"),
-              _buildNavItem(2, Icons.receipt_long_rounded, "Requests"),
-              _buildNavItem(3, Icons.person_rounded, "Profile"),
+              _buildNavItem(0, Icons.dashboard_rounded, 'Dashboard'),
+              _buildNavItem(1, Icons.business_rounded, 'Hotels'),
+              _buildNavItem(2, Icons.receipt_long_rounded, 'Requests'),
+              _buildNavItem(3, Icons.person_rounded, 'Profile'),
             ],
           ),
         ),
@@ -614,35 +882,36 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
     return GestureDetector(
       onTap: () {
-        // --- Added Index 1 (Hotels) ---
         if (index == 1) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const OwnerHotelsScreen()),
-          );
-          return;
-        }
-        // Index 2 (Requests)
-        else if (index == 2) {
-          Navigator.push(
-            context,
             MaterialPageRoute(
-              builder: (context) =>
-                  const OwnerBookingsScreen(), // Assuming this is your requests screen
+              builder: (context) => const OwnerHotelsScreen(),
             ),
           );
           return;
         }
-        // Index 3 (Profile)
-        else if (index == 3) {
+
+        if (index == 2) {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const OwnerProfileScreen()),
+            MaterialPageRoute(
+              builder: (context) => const OwnerBookingsScreen(),
+            ),
           );
           return;
         }
 
-        // Index 0 (Dashboard) just updates the state
+        if (index == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const OwnerProfileScreen(),
+            ),
+          );
+          return;
+        }
+
         setState(() {
           _bottomNavIndex = index;
         });
@@ -653,7 +922,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         decoration: BoxDecoration(
           gradient: isSelected
               ? const LinearGradient(
-                  colors: [AppColors.primary, AppColors.secondary],
+                  colors: [
+                    AppColors.primary,
+                    AppColors.secondary,
+                  ],
                 )
               : null,
           borderRadius: BorderRadius.circular(24),
@@ -682,7 +954,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  Widget _glassCard({required Widget child, EdgeInsetsGeometry? padding}) {
+  Widget _glassCard({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -693,7 +968,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.15),
+            ),
           ),
           child: child,
         ),
@@ -720,14 +997,23 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               decoration: BoxDecoration(
                 gradient: isGradient
                     ? const LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
+                        colors: [
+                          AppColors.primary,
+                          AppColors.secondary,
+                        ],
                       )
                     : null,
                 color: isGradient ? null : Colors.white.withOpacity(0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                ),
               ),
-              child: Icon(icon, color: Colors.white, size: iconSize),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: iconSize,
+              ),
             ),
           ),
         ),
@@ -767,7 +1053,53 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           child: Container(
             width: size,
             height: size,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullScreenMessage({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: _glassCard(
+          padding: const EdgeInsets.all(26),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                color: AppColors.accent,
+                size: 70,
+              ),
+              const SizedBox(height: 18),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.70),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -775,14 +1107,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   }
 }
 
-// ===========================================================================
-// REUSABLE BOOKING CARD FOR OWNERS
-// ===========================================================================
 class _OwnerBookingCard extends StatefulWidget {
   final Map<String, dynamic> bookingData;
   final String bookingId;
 
-  const _OwnerBookingCard({required this.bookingData, required this.bookingId});
+  const _OwnerBookingCard({
+    required this.bookingData,
+    required this.bookingId,
+  });
 
   @override
   State<_OwnerBookingCard> createState() => _OwnerBookingCardState();
@@ -793,14 +1125,14 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'approved':
+      case 'accepted':
         return const Color(0xFF4CAF50);
       case 'pending':
         return const Color(0xFFFF9800);
-      case 'cancelled':
+      case 'rejected':
         return const Color(0xFFF44336);
-      case 'completed':
-        return AppColors.primary;
+      case 'cancelled':
+        return Colors.deepOrangeAccent;
       default:
         return Colors.grey;
     }
@@ -808,37 +1140,56 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
 
   Future<void> _updateStatus(String newStatus) async {
     setState(() => _isLoading = true);
+
     try {
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(widget.bookingId)
-          .update({'status': newStatus});
+          .update({
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Booking $newStatus successfully'),
           backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to update booking'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text('Failed to update booking: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final status =
-        widget.bookingData['status']?.toString().toUpperCase() ?? 'PENDING';
-    final statusColor = _getStatusColor(widget.bookingData['status'] ?? '');
-    final customerName = widget.bookingData['customerName'] ?? 'Guest';
-    final hotelName = widget.bookingData['hotelName'] ?? 'Unknown Hotel';
+    final String rawStatus =
+        widget.bookingData['status']?.toString().toLowerCase() ?? 'pending';
+
+    final String status = rawStatus.toUpperCase();
+    final Color statusColor = _getStatusColor(rawStatus);
+
+    final String customerName = widget.bookingData['customerName'] ?? 'Guest';
+
+    final String hotelName = widget.bookingData['hotelName'] ?? 'Unknown Hotel';
+
+    final num totalPrice = widget.bookingData['totalPrice'] ?? 0;
+    final int totalNights = widget.bookingData['totalNights'] ?? 0;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -849,7 +1200,9 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.08),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.15),
+            ),
           ),
           child: Column(
             children: [
@@ -859,7 +1212,9 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                     radius: 24,
                     backgroundColor: Colors.white.withOpacity(0.1),
                     child: Text(
-                      customerName[0].toUpperCase(),
+                      customerName.isNotEmpty
+                          ? customerName[0].toUpperCase()
+                          : 'G',
                       style: const TextStyle(
                         color: AppColors.accent,
                         fontWeight: FontWeight.bold,
@@ -867,7 +1222,9 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                       ),
                     ),
                   ),
+
                   const SizedBox(width: 16),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -880,16 +1237,29 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 3),
                         Text(
                           hotelName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.6),
                             fontSize: 13,
                           ),
                         ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Rs. ${totalPrice.toInt()} • $totalNights nights',
+                          style: const TextStyle(
+                            color: AppColors.accent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ),
+
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -898,7 +1268,9 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor.withOpacity(0.5)),
+                      border: Border.all(
+                        color: statusColor.withOpacity(0.5),
+                      ),
                     ),
                     child: Text(
                       status,
@@ -912,33 +1284,38 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                 ],
               ),
 
-              if (status == 'PENDING') ...[
+              if (rawStatus == 'pending') ...[
                 const SizedBox(height: 16),
-                const Divider(color: Colors.white12, height: 1),
+                const Divider(
+                  color: Colors.white12,
+                  height: 1,
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => _updateStatus('cancelled'),
+                        onPressed:
+                            _isLoading ? null : () => _updateStatus('rejected'),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent),
+                          side: const BorderSide(
+                            color: Colors.redAccent,
+                          ),
                           foregroundColor: Colors.redAccent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text("Reject"),
+                        child: const Text('Reject'),
                       ),
                     ),
+
                     const SizedBox(width: 12),
+
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => _updateStatus('approved'),
+                        onPressed:
+                            _isLoading ? null : () => _updateStatus('accepted'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.backgroundDark1,
@@ -956,8 +1333,10 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                                 ),
                               )
                             : const Text(
-                                "Approve",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                'Accept',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                       ),
                     ),
