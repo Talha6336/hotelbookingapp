@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
 
@@ -54,6 +55,16 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
         .snapshots();
   }
 
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getCurrentUserStream() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (uid == null) {
+      return const Stream.empty();
+    }
+
+    return FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+  }
+
   List<QueryDocumentSnapshot> filterHotels(List<QueryDocumentSnapshot> docs) {
     return docs.where((doc) {
       final hotel = doc.data() as Map<String, dynamic>;
@@ -78,12 +89,12 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
     return Scaffold(
       body: Stack(
         children: [
-          // Background gradient
           Container(
-            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
+            decoration: const BoxDecoration(
+              gradient: AppColors.darkGradient,
+            ),
           ),
 
-          // Floating circles
           AnimatedBuilder(
             animation: _floatingController,
             builder: (context, child) {
@@ -91,16 +102,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 children: [
                   _buildFloatingCircle(
                     size: 260,
-                    top:
-                        -80 +
+                    top: -80 +
                         (math.sin(_floatingController.value * math.pi) * 30),
                     left: -90,
                     color: AppColors.primary.withOpacity(0.35),
                   ),
                   _buildFloatingCircle(
                     size: 320,
-                    bottom:
-                        -120 +
+                    bottom: -120 +
                         (math.cos(_floatingController.value * math.pi) * 45),
                     right: -80,
                     color: AppColors.secondary.withOpacity(0.25),
@@ -221,77 +230,110 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                height: 52,
-                width: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.22)),
-                ),
-                child: const Icon(Icons.person_outline, color: Colors.white),
-              ),
-            ),
-          ),
+  return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+    stream: getCurrentUserStream(),
+    builder: (context, snapshot) {
+      final userData = snapshot.data?.data();
 
-          const SizedBox(width: 14),
+      final String name = userData?['name'] ?? 'Guest';
 
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Welcome back',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'Find your perfect stay',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+      // IMPORTANT:
+      // Your profile screen uses "profileImage", not "profileImageUrl"
+      final String profileImage = userData?['profileImage'] ?? '';
+
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  height: 52,
+                  width: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.22),
+                    ),
+                    image: profileImage.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(profileImage),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                height: 46,
-                width: 46,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.22)),
-                ),
-                child: IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    Icons.notifications_none_rounded,
-                    color: Colors.white,
-                  ),
+                  child: profileImage.isEmpty
+                      ? const Icon(
+                          Icons.person_outline,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Welcome back, $name',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  const Text(
+                    'Find your perfect stay',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 23,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  height: 46,
+                  width: 46,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.22),
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildSearchBox() {
     return Padding(
@@ -392,7 +434,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
               child: Text(
                 city,
                 style: TextStyle(
-                  color: isSelected ? Color(0xFF1A237E) : Colors.white,
+                  color: isSelected
+                      ? AppColors.backgroundDark1
+                      : Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -483,7 +527,10 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
           height: 78,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1A237E), Color(0xFF311B92)],
+              colors: [
+                AppColors.backgroundDark1,
+                AppColors.backgroundDark2,
+              ],
             ),
             border: Border(
               top: BorderSide(color: Colors.white.withOpacity(0.16)),
@@ -521,7 +568,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 icon: Icons.person_outline_rounded,
                 label: 'Profile',
                 selected: false,
-                 onTap: () {
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(

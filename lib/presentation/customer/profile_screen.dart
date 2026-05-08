@@ -88,9 +88,7 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildTopBar(context),
-
                       const SizedBox(height: 26),
-
                       const Text(
                         'My Profile',
                         style: TextStyle(
@@ -100,9 +98,7 @@ class ProfileScreen extends StatelessWidget {
                           letterSpacing: -0.5,
                         ),
                       ),
-
                       const SizedBox(height: 6),
-
                       Text(
                         'Manage your account and booking activity.',
                         style: TextStyle(
@@ -110,9 +106,7 @@ class ProfileScreen extends StatelessWidget {
                           fontSize: 14,
                         ),
                       ),
-
                       const SizedBox(height: 28),
-
                       StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                         stream: _userStream(),
                         builder: (context, snapshot) {
@@ -152,29 +146,27 @@ class ProfileScreen extends StatelessWidget {
                           final String role =
                               userData['role'] ?? 'customer';
 
+                          final String? profileImage =
+                              userData['profileImage'];
+
                           return Column(
                             children: [
                               _buildProfileHeader(
                                 name: name,
                                 email: email,
                                 role: role,
+                                profileImage: profileImage,
                               ),
-
                               const SizedBox(height: 20),
-
                               _buildStatsCard(),
-
                               const SizedBox(height: 20),
-
                               _buildInfoCard(
                                 name: name,
                                 email: email,
                                 phone: phone,
                                 role: role,
                               ),
-
                               const SizedBox(height: 20),
-
                               _buildActionCard(context),
                             ],
                           );
@@ -208,6 +200,7 @@ class ProfileScreen extends StatelessWidget {
     required String name,
     required String email,
     required String role,
+    String? profileImage,
   }) {
     return _glassCard(
       padding: const EdgeInsets.all(22),
@@ -218,12 +211,20 @@ class ProfileScreen extends StatelessWidget {
             width: 92,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  AppColors.secondary,
-                ],
-              ),
+              gradient: profileImage == null || profileImage.isEmpty
+                  ? const LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.secondary,
+                      ],
+                    )
+                  : null,
+              image: profileImage != null && profileImage.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(profileImage),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
               border: Border.all(
                 color: Colors.white.withOpacity(0.28),
                 width: 2,
@@ -236,15 +237,15 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 46,
-            ),
+            child: profileImage == null || profileImage.isEmpty
+                ? const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 46,
+                  )
+                : null,
           ),
-
           const SizedBox(height: 16),
-
           Text(
             name,
             textAlign: TextAlign.center,
@@ -254,9 +255,7 @@ class ProfileScreen extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
-
           const SizedBox(height: 6),
-
           Text(
             email,
             textAlign: TextAlign.center,
@@ -265,9 +264,7 @@ class ProfileScreen extends StatelessWidget {
               fontSize: 13,
             ),
           ),
-
           const SizedBox(height: 14),
-
           Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 14,
@@ -534,9 +531,7 @@ class ProfileScreen extends StatelessWidget {
                 size: 22,
               ),
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -560,7 +555,6 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             Icon(
               Icons.arrow_forward_ios_rounded,
               color: Colors.white.withOpacity(0.45),

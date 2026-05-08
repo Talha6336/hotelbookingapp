@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../services/cloudinary_service.dart';
 import '../widgets/app_background.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -37,6 +40,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool newPasswordVisible = false;
   bool confirmPasswordVisible = false;
 
+  File? selectedImage;
+  String? profileImageUrl;
+  bool isUploadingImage = false;
+
   @override
   void initState() {
     super.initState();
@@ -47,6 +54,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     emailController.text =
         widget.userData['email'] ?? currentUser?.email ?? '';
     phoneController.text = widget.userData['phone'] ?? '';
+
+    profileImageUrl = widget.userData['profileImage'];
   }
 
   @override
@@ -58,6 +67,60 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     newPasswordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadProfileImage() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      _showSnackBar('User not logged in.');
+      return;
+    }
+
+    try {
+      final picker = ImagePicker();
+
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 75,
+      );
+
+      if (pickedFile == null) return;
+
+      setState(() {
+        selectedImage = File(pickedFile.path);
+        isUploadingImage = true;
+      });
+
+      final imageUrl = await CloudinaryService.uploadImage(selectedImage!);
+
+      if (imageUrl == null) {
+        _showSnackBar('Image upload failed.');
+        return;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .update({
+        'profileImage': imageUrl,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        profileImageUrl = imageUrl;
+      });
+
+      _showSnackBar('Profile picture updated.');
+    } catch (e) {
+      _showSnackBar('Image error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploadingImage = false;
+        });
+      }
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -78,14 +141,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .update({
+      final Map<String, dynamic> updatedData = {
         'name': nameController.text.trim(),
         'phone': phoneController.text.trim(),
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      };
+
+      if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
+        updatedData['profileImage'] = profileImageUrl;
+      }
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .update(updatedData);
 
       if (showPasswordSection) {
         await _changePassword(currentUser);
@@ -143,6 +212,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showSnackBar(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -165,9 +236,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildTopBar(context),
-
                     const SizedBox(height: 26),
-
                     const Text(
                       'Edit Profile',
                       style: TextStyle(
@@ -177,9 +246,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         letterSpacing: -0.5,
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
                       'Update your personal information and password.',
                       style: TextStyle(
@@ -187,13 +254,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         fontSize: 14,
                       ),
                     ),
-
                     const SizedBox(height: 28),
-
                     _buildAvatar(),
-
                     const SizedBox(height: 24),
-
                     _glassCard(
                       child: Column(
                         children: [
@@ -202,18 +265,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             hintText: 'Full Name',
                             icon: Icons.person_outline_rounded,
                           ),
-
                           const SizedBox(height: 16),
-
                           _buildTextField(
                             controller: emailController,
                             hintText: 'Email Address',
                             icon: Icons.email_outlined,
                             enabled: false,
                           ),
-
                           const SizedBox(height: 16),
-
                           _buildTextField(
                             controller: phoneController,
                             hintText: 'Phone Number',
@@ -223,11 +282,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 20),
-
                     _buildPasswordToggle(),
-
                     if (showPasswordSection) ...[
                       const SizedBox(height: 16),
                       _buildPasswordSection(),
@@ -236,7 +292,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
             ),
-
             _buildBottomSaveButton(),
           ],
         ),
@@ -257,6 +312,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildAvatar() {
+    final bool hasImage =
+        profileImageUrl != null && profileImageUrl!.isNotEmpty;
+
     return Center(
       child: Stack(
         children: [
@@ -265,12 +323,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             width: 96,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: const LinearGradient(
-                colors: [
-                  AppColors.primary,
-                  AppColors.secondary,
-                ],
-              ),
+              gradient: hasImage
+                  ? null
+                  : const LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.secondary,
+                      ],
+                    ),
+              image: hasImage
+                  ? DecorationImage(
+                      image: NetworkImage(profileImageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
               border: Border.all(
                 color: Colors.white.withOpacity(0.28),
                 width: 2,
@@ -283,31 +349,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 48,
-            ),
+            child: hasImage
+                ? null
+                : const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 48,
+                  ),
           ),
-
           Positioned(
             right: 0,
             bottom: 0,
-            child: Container(
-              height: 34,
-              width: 34,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.backgroundDark1,
-                  width: 2,
+            child: InkWell(
+              onTap: isUploadingImage ? null : _pickAndUploadProfileImage,
+              borderRadius: BorderRadius.circular(50),
+              child: Container(
+                height: 34,
+                width: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.backgroundDark1,
+                    width: 2,
+                  ),
                 ),
-              ),
-              child: const Icon(
-                Icons.camera_alt_rounded,
-                color: AppColors.backgroundDark1,
-                size: 18,
+                child: isUploadingImage
+                    ? const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          color: AppColors.backgroundDark1,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.camera_alt_rounded,
+                        color: AppColors.backgroundDark1,
+                        size: 18,
+                      ),
               ),
             ),
           ),
@@ -343,9 +422,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 size: 22,
               ),
             ),
-
             const SizedBox(width: 14),
-
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,7 +446,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ],
               ),
             ),
-
             Icon(
               showPasswordSection
                   ? Icons.keyboard_arrow_up_rounded
@@ -405,9 +481,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
           _buildTextField(
             controller: newPasswordController,
             hintText: 'New Password',
@@ -427,9 +501,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
           _buildTextField(
             controller: confirmPasswordController,
             hintText: 'Confirm New Password',
@@ -588,7 +660,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               height: 56,
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: isLoading ? null : _saveProfile,
+                onPressed: isLoading || isUploadingImage ? null : _saveProfile,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.backgroundDark1,
