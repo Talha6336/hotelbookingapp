@@ -251,7 +251,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildStatCard("Total", stats['Total']!, AppColors.primary),
+          _buildStatCard("Total", stats['Total']!, const Color(0xFF2196F3)),
           _buildStatCard("Pending", stats['Pending']!, const Color(0xFFFF9800)),
           _buildStatCard(
             "Approved",
@@ -285,6 +285,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 13,
+                
               ),
             ),
             const SizedBox(height: 4),
@@ -575,12 +576,26 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     }
   }
 
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final status =
         widget.bookingData['status']?.toString().toUpperCase() ?? 'PENDING';
     final statusColor = _getStatusColor(widget.bookingData['status'] ?? '');
     final hotelName = widget.bookingData['hotelName'] ?? 'Luxury Hotel';
+    // --- GRAB THE IMAGE URL HERE ---
+    final hotelImage = widget.bookingData['hotelImage'] ?? '';
     final price = widget.bookingData['totalPrice'] ?? 0;
     final nights = widget.bookingData['totalNights'] ?? 1;
 
@@ -610,20 +625,21 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Hotel Image Placeholder
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.hotel,
-                          color: Colors.white54,
-                          size: 32,
-                        ),
+                      // --- THE FIX: NEW IMAGE DISPLAY WIDGET ---
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: hotelImage.toString().isNotEmpty
+                            ? Image.network(
+                                hotelImage,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    _buildImagePlaceholder(),
+                              )
+                            : _buildImagePlaceholder(),
                       ),
+
                       const SizedBox(width: 16),
                       // Details
                       Expanded(

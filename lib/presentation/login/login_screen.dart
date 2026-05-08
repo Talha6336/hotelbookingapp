@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen>
         children: [
           // 1. Luxury Background Image
           Positioned.fill(
-            child: Image.asset('images/hotel_bg.jpg', fit: BoxFit.cover),
+            child: Image.asset('assets/images/hotel_bg.jpg', fit: BoxFit.cover),
           ),
 
           // 2. Dark Gradient Overlay for Readability

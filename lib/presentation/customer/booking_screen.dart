@@ -146,11 +146,12 @@ class _BookingScreenState extends State<BookingScreen> {
         customerName = userData?['name'] ?? 'Customer';
       }
 
-      await FirebaseFirestore.instance.collection('bookings').add({
+     await FirebaseFirestore.instance.collection('bookings').add({
         'userId': currentUser.uid,
         'ownerId': widget.hotel['ownerId'] ?? '',
         'hotelId': widget.hotelId,
         'hotelName': widget.hotel['name'] ?? 'Unknown Hotel',
+        'hotelImage': widget.hotel['imageUrl'] ?? '',
         'customerName': customerName,
         'checkInDate': Timestamp.fromDate(checkInDate!),
         'checkOutDate': Timestamp.fromDate(checkOutDate!),
@@ -159,7 +160,6 @@ class _BookingScreenState extends State<BookingScreen> {
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });
-
       if (!mounted) return;
 
       _showSuccessDialog();

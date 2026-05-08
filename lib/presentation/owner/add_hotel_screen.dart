@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Import your custom image picker
-import ''; // Update this path to match your actual folder structure!
+// Map Imports
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
+// Internal Imports
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_image_picker.dart';
 
@@ -35,6 +38,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
   String _selectedCategory = 'Luxury';
   List<String> _uploadedImageUrls = [];
   Set<String> _selectedAmenities = {};
+
+  // Map Variables
+  LatLng? _selectedLocation;
+  final LatLng _initialMapCenter = const LatLng(31.4187, 73.0791); // Faisalabad
 
   // Animations
   late AnimationController _floatingController;
@@ -98,6 +105,15 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       return;
     }
 
+    // Require Map Location
+    if (_selectedLocation == null) {
+      _showSnackBar(
+        "Please tap on the map to pin your hotel's location.",
+        isError: true,
+      );
+      return; 
+    }
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       _showSnackBar("You must be logged in to add a hotel.", isError: true);
@@ -120,17 +136,18 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         'category': _selectedCategory,
         'amenities': _selectedAmenities.toList(),
         'images': _uploadedImageUrls,
-        'imageUrl': _uploadedImageUrls.first, // Primary display image
-        'rating': 0.0, // Default for new hotels
-        'latitude': 31.4187, // Placeholder for Google Maps
-        'longitude': 73.0791, // Placeholder for Google Maps
+        'imageUrl': _uploadedImageUrls.first,
+        'rating': 0.0,
+        // Save the dynamic map coordinates!
+        'latitude': _selectedLocation!.latitude,
+        'longitude': _selectedLocation!.longitude,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (!mounted) return;
 
       _showSnackBar("Hotel added successfully!", isError: false);
-      Navigator.pop(context); // Go back to dashboard
+      Navigator.pop(context);
     } catch (e) {
       _showSnackBar("Failed to save hotel: $e", isError: true);
     } finally {
@@ -154,12 +171,9 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // 1. Luxury Dark Gradient Background
           Container(
             decoration: const BoxDecoration(gradient: AppColors.darkGradient),
           ),
-
-          // 2. Animated Floating Orbs
           AnimatedBuilder(
             animation: _floatingController,
             builder: (context, child) {
@@ -181,8 +195,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
               );
             },
           ),
-
-          // 3. Main Scrollable Form
           SafeArea(
             child: Column(
               children: [
@@ -215,8 +227,9 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                           _buildAmenitiesSelection(),
                           const SizedBox(height: 24),
 
-                          _buildSectionTitle("Location (Google Maps)"),
-                          _buildMapPlaceholder(),
+                          // NEW: Interactive Map Section
+                          _buildSectionTitle("Location"),
+                          _buildInteractiveMap(),
                           const SizedBox(height: 32),
 
                           _buildSaveButton(),
@@ -300,7 +313,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Display already uploaded images
           if (_uploadedImageUrls.isNotEmpty) ...[
             SizedBox(
               height: 100,
@@ -349,8 +361,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
             ),
             const SizedBox(height: 16),
           ],
-
-          // Your custom Cloudinary Image Picker component
           AppImagePicker(
             buttonText: _uploadedImageUrls.isEmpty
                 ? "Upload Cover Image"
@@ -584,44 +594,113 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     );
   }
 
-  Widget _buildMapPlaceholder() {
+  // ===========================================================================
+  // INTERACTIVE MAP COMPONENT
+  // ===========================================================================
+  Widget _buildInteractiveMap() {
     return _glassCard(
-      padding: EdgeInsets.zero,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Opacity(
-            opacity: 0.5,
-            child: Image.network(
-              'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1000&auto=format&fit=crop',
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundDark1.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.accent.withOpacity(0.5)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.location_on, color: AppColors.accent),
-                SizedBox(width: 8),
-                Text(
-                  "Pin Location on Map",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.all(
+        4,
+      ), // Small padding so the glass effect frames the map perfectly
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          height: 240,
+          width: double.infinity,
+          child: Stack(
+            children: [
+              FlutterMap(
+                options: MapOptions(
+                  initialCenter: _initialMapCenter,
+                  initialZoom: 12,
+                  onTap: (tapPosition, point) {
+                    // Update state with the exact coordinates tapped
+                    setState(() {
+                      _selectedLocation = point;
+                    });
+                  },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                    subdomains: const ['a', 'b', 'c', 'd'],
+                    userAgentPackageName: 'com.example.hotelbookingapp',
+                  ),
+                  if (_selectedLocation != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _selectedLocation!,
+                          width: 50,
+                          height: 50,
+                          child: const Icon(
+                            Icons.location_on,
+                            color: AppColors.accent,
+                            size: 44,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+
+              // Floating Coordinates / Instruction Bar
+              Positioned(
+                top: 12,
+                left: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 10,
+                    horizontal: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundDark1.withOpacity(0.88),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _selectedLocation == null
+                            ? Icons.touch_app
+                            : Icons.check_circle,
+                        color: _selectedLocation == null
+                            ? Colors.white70
+                            : AppColors.accent,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _selectedLocation == null
+                              ? "Tap map to set hotel location"
+                              : "Lat: ${_selectedLocation!.latitude.toStringAsFixed(4)}, Lng: ${_selectedLocation!.longitude.toStringAsFixed(4)}",
+                          style: TextStyle(
+                            color: _selectedLocation == null
+                                ? Colors.white70
+                                : Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -15,6 +15,7 @@
         "flutter",
         "flutter_image_filters",
         "flutter_map",
+        "geolocator",
         "image_picker",
         "intl",
         "latlong2"
@@ -47,6 +48,19 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "geolocator",
+      "version": "14.0.2",
+      "dependencies": [
+        "flutter",
+        "geolocator_android",
+        "geolocator_apple",
+        "geolocator_linux",
+        "geolocator_platform_interface",
+        "geolocator_web",
+        "geolocator_windows"
       ]
     },
     {
@@ -260,6 +274,64 @@
         "stream_channel",
         "string_scanner",
         "term_glyph"
+      ]
+    },
+    {
+      "name": "geolocator_linux",
+      "version": "0.2.4",
+      "dependencies": [
+        "dbus",
+        "flutter",
+        "geoclue",
+        "geolocator_platform_interface",
+        "gsettings",
+        "package_info_plus"
+      ]
+    },
+    {
+      "name": "geolocator_windows",
+      "version": "0.2.5",
+      "dependencies": [
+        "flutter",
+        "geolocator_platform_interface"
+      ]
+    },
+    {
+      "name": "geolocator_web",
+      "version": "4.1.3",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "geolocator_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "geolocator_apple",
+      "version": "2.3.13",
+      "dependencies": [
+        "flutter",
+        "geolocator_platform_interface"
+      ]
+    },
+    {
+      "name": "geolocator_android",
+      "version": "5.0.2",
+      "dependencies": [
+        "flutter",
+        "geolocator_platform_interface",
+        "meta",
+        "uuid"
+      ]
+    },
+    {
+      "name": "geolocator_platform_interface",
+      "version": "4.2.6",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface",
+        "vector_math"
       ]
     },
     {
@@ -615,6 +687,67 @@
       ]
     },
     {
+      "name": "package_info_plus",
+      "version": "9.0.1",
+      "dependencies": [
+        "clock",
+        "ffi",
+        "flutter",
+        "flutter_web_plugins",
+        "http",
+        "meta",
+        "package_info_plus_platform_interface",
+        "path",
+        "web",
+        "win32"
+      ]
+    },
+    {
+      "name": "gsettings",
+      "version": "0.2.8",
+      "dependencies": [
+        "dbus",
+        "xdg_directories"
+      ]
+    },
+    {
+      "name": "geoclue",
+      "version": "0.1.1",
+      "dependencies": [
+        "dbus",
+        "meta"
+      ]
+    },
+    {
+      "name": "dbus",
+      "version": "0.7.12",
+      "dependencies": [
+        "args",
+        "ffi",
+        "meta",
+        "xml"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
       "name": "fixnum",
       "version": "1.1.1",
       "dependencies": []
@@ -687,11 +820,6 @@
         "jni_flutter",
         "path_provider_platform_interface"
       ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
     },
     {
       "name": "http_parser",
@@ -846,13 +974,6 @@
       ]
     },
     {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
-      ]
-    },
-    {
       "name": "cross_file",
       "version": "0.3.5+2",
       "dependencies": [
@@ -875,13 +996,6 @@
       "dependencies": [
         "cross_file",
         "file_selector_platform_interface",
-        "flutter"
-      ]
-    },
-    {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
         "flutter"
       ]
     },
@@ -909,6 +1023,44 @@
       "dependencies": []
     },
     {
+      "name": "win32",
+      "version": "5.15.0",
+      "dependencies": [
+        "ffi"
+      ]
+    },
+    {
+      "name": "package_info_plus_platform_interface",
+      "version": "3.2.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "xml",
+      "version": "6.6.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "petitparser"
+      ]
+    },
+    {
       "name": "typed_data",
       "version": "1.4.0",
       "dependencies": [
@@ -924,22 +1076,9 @@
       ]
     },
     {
-      "name": "ffi",
-      "version": "2.2.0",
-      "dependencies": []
-    },
-    {
       "name": "platform",
       "version": "3.1.6",
       "dependencies": []
-    },
-    {
-      "name": "xdg_directories",
-      "version": "1.1.0",
-      "dependencies": [
-        "meta",
-        "path"
-      ]
     },
     {
       "name": "objective_c",
@@ -1091,6 +1230,14 @@
         "json_annotation",
         "path",
         "pubspec_parse"
+      ]
+    },
+    {
+      "name": "petitparser",
+      "version": "7.0.2",
+      "dependencies": [
+        "collection",
+        "meta"
       ]
     },
     {

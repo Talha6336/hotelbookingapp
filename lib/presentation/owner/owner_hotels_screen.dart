@@ -287,7 +287,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
             "Total Hotels",
             analytics['total'].toString(),
             Icons.domain_rounded,
-            AppColors.primary,
+            const Color(0xFF2196F3),
           ),
           _buildAnalyticCard(
             "Active",
