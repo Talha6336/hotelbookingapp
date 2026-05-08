@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import 'add_hotel_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -14,7 +15,8 @@ class OwnerDashboardScreen extends StatefulWidget {
   State<OwnerDashboardScreen> createState() => _OwnerDashboardScreenState();
 }
 
-class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with TickerProviderStateMixin {
+class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
+    with TickerProviderStateMixin {
   late AnimationController _floatingController;
   late AnimationController _entranceController;
   int _bottomNavIndex = 0;
@@ -64,11 +66,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
     for (var doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
       final status = data['status']?.toString().toLowerCase() ?? '';
-      
+
       if (status == 'approved' || status == 'completed') {
         totalRevenue += (data['totalPrice'] ?? 0).toDouble();
       }
-      
+
       if (status == 'pending') pending++;
       if (status == 'approved') active++;
       if (status == 'completed') completed++;
@@ -91,7 +93,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
       body: Stack(
         children: [
           // 1. Luxury Dark Gradient Background
-          Container(decoration: const BoxDecoration(gradient: AppColors.darkGradient)),
+          Container(
+            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
+          ),
 
           // 2. Animated Floating Orbs
           AnimatedBuilder(
@@ -101,13 +105,17 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
                 children: [
                   _buildFloatingCircle(
                     size: 300,
-                    top: -100 + (math.sin(_floatingController.value * math.pi) * 40),
+                    top:
+                        -100 +
+                        (math.sin(_floatingController.value * math.pi) * 40),
                     left: -100,
                     color: AppColors.primary.withOpacity(0.25),
                   ),
                   _buildFloatingCircle(
                     size: 400,
-                    bottom: 50 + (math.cos(_floatingController.value * math.pi) * 50),
+                    bottom:
+                        50 +
+                        (math.cos(_floatingController.value * math.pi) * 50),
                     right: -150,
                     color: AppColors.secondary.withOpacity(0.2),
                   ),
@@ -123,7 +131,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
               stream: _getOwnerBookingsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.accent),
+                  );
                 }
 
                 final docs = snapshot.data?.docs ?? [];
@@ -136,27 +146,35 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
                     SliverToBoxAdapter(child: const SizedBox(height: 16)),
                     SliverToBoxAdapter(child: _buildHeroCard(analytics)),
                     SliverToBoxAdapter(child: const SizedBox(height: 24)),
-                    SliverToBoxAdapter(child: _buildQuickActions()),
+                    SliverToBoxAdapter(child: _buildQuickActions(context)),
                     SliverToBoxAdapter(child: const SizedBox(height: 24)),
                     SliverToBoxAdapter(child: _buildStatsGrid(analytics)),
                     SliverToBoxAdapter(child: const SizedBox(height: 24)),
                     SliverToBoxAdapter(child: _buildChartPlaceholder()),
                     SliverToBoxAdapter(child: const SizedBox(height: 24)),
-                    SliverToBoxAdapter(child: _buildSectionTitle("Recent Bookings", "View All")),
+                    SliverToBoxAdapter(
+                      child: _buildSectionTitle("Recent Bookings", "View All"),
+                    ),
                     SliverPadding(
-                      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 120), // Bottom padding for nav bar
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        bottom: 120,
+                      ), // Bottom padding for nav bar
                       sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index >= docs.length || index > 5) return null; // Show only top 5 recent
-                            final bookingData = docs[index].data() as Map<String, dynamic>;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _OwnerBookingCard(bookingData: bookingData, bookingId: docs[index].id),
-                            );
-                          },
-                          childCount: math.min(docs.length, 5),
-                        ),
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          if (index >= docs.length || index > 5)
+                            return null; // Show only top 5 recent
+                          final bookingData =
+                              docs[index].data() as Map<String, dynamic>;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _OwnerBookingCard(
+                              bookingData: bookingData,
+                              bookingId: docs[index].id,
+                            ),
+                          );
+                        }, childCount: math.min(docs.length, 5)),
                       ),
                     ),
                   ],
@@ -166,7 +184,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
           ),
 
           // 4. Floating Bottom Navigation Bar
-          Positioned(bottom: 24, left: 24, right: 24, child: _buildFloatingNavBar()),
+          Positioned(
+            bottom: 24,
+            left: 24,
+            right: 24,
+            child: _buildFloatingNavBar(),
+          ),
         ],
       ),
     );
@@ -185,29 +208,51 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Welcome Back 👋", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
+              Text(
+                "Welcome Back 👋",
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
               const SizedBox(height: 4),
-              const Text("Hotel Manager", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
+              const Text(
+                "Hotel Manager",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                ),
+              ),
             ],
           ),
           Row(
             children: [
-              _glassIconButton(Icons.notifications_none_rounded, showBadge: true),
+              _glassIconButton(
+                Icons.notifications_none_rounded,
+                showBadge: true,
+              ),
               const SizedBox(width: 12),
               const CircleAvatar(
                 radius: 22,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=60'), // Manager placeholder
+                backgroundImage: NetworkImage(
+                  'https://i.pravatar.cc/150?img=60',
+                ), // Manager placeholder
               ),
             ],
-          )
+          ),
         ],
       ),
     );
   }
 
   Widget _buildHeroCard(Map<String, dynamic> analytics) {
-    final currencyFormat = NumberFormat.currency(symbol: 'Rs. ', decimalDigits: 0);
-    
+    final currencyFormat = NumberFormat.currency(
+      symbol: 'Rs. ',
+      decimalDigits: 0,
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: _glassCard(
@@ -218,18 +263,42 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Total Revenue", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(
+                  "Total Revenue",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFF4CAF50).withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   child: const Row(
                     children: [
-                      Icon(Icons.trending_up, color: Color(0xFF4CAF50), size: 14),
+                      Icon(
+                        Icons.trending_up,
+                        color: Color(0xFF4CAF50),
+                        size: 14,
+                      ),
                       SizedBox(width: 4),
-                      Text("+12.5%", style: TextStyle(color: Color(0xFF4CAF50), fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(
+                        "+12.5%",
+                        style: TextStyle(
+                          color: Color(0xFF4CAF50),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -237,17 +306,28 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
               fit: BoxFit.scaleDown,
               child: Text(
                 currencyFormat.format(analytics['revenue'] ?? 0),
-                style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800, letterSpacing: -1),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1,
+                ),
               ),
             ),
             const SizedBox(height: 20),
             Row(
               children: [
-                _buildMiniStat(Icons.book_online, "${analytics['active']} Active Stays"),
+                _buildMiniStat(
+                  Icons.book_online,
+                  "${analytics['active']} Active Stays",
+                ),
                 const SizedBox(width: 20),
-                _buildMiniStat(Icons.pending_actions, "${analytics['pending']} Pending Req."),
+                _buildMiniStat(
+                  Icons.pending_actions,
+                  "${analytics['pending']} Pending Req.",
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -259,12 +339,20 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
       children: [
         Icon(icon, color: AppColors.accent, size: 16),
         const SizedBox(width: 6),
-        Text(text, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.8),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildQuickActions() {
+  // 1. Add 'BuildContext context' to the parameters so we can navigate
+  Widget _buildQuickActions(BuildContext context) {
     final actions = [
       {"icon": Icons.add_business_rounded, "label": "Add Hotel"},
       {"icon": Icons.meeting_room_rounded, "label": "Rooms"},
@@ -277,12 +365,49 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: actions.map((a) {
-          return Column(
-            children: [
-              _glassIconButton(a["icon"] as IconData, size: 56, iconSize: 26, isGradient: true),
-              const SizedBox(height: 8),
-              Text(a["label"] as String, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500)),
-            ],
+          // 2. Wrap the return in a GestureDetector
+          return GestureDetector(
+            onTap: () {
+              // 3. Route based on the label that was tapped
+              if (a["label"] == "Add Hotel") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddHotelScreen(),
+                  ),
+                );
+              } else {
+                // Placeholder for the other buttons
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${a["label"]} screen coming soon!'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            // Use HitTestBehavior.opaque so tapping the empty space
+            // between the icon and the text still triggers the tap!
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              children: [
+                _glassIconButton(
+                  a["icon"] as IconData,
+                  size: 56,
+                  iconSize: 26,
+                  isGradient: true,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  a["label"] as String,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           );
         }).toList(),
       ),
@@ -294,15 +419,34 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Expanded(child: _buildStatSquare("Total Bookings", analytics['total'].toString(), Icons.library_books_rounded, Colors.blue)),
+          Expanded(
+            child: _buildStatSquare(
+              "Total Bookings",
+              analytics['total'].toString(),
+              Icons.library_books_rounded,
+              Colors.blue,
+            ),
+          ),
           const SizedBox(width: 16),
-          Expanded(child: _buildStatSquare("Completed", analytics['completed'].toString(), Icons.check_circle_rounded, const Color(0xFF4CAF50))),
+          Expanded(
+            child: _buildStatSquare(
+              "Completed",
+              analytics['completed'].toString(),
+              Icons.check_circle_rounded,
+              const Color(0xFF4CAF50),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatSquare(String title, String value, IconData icon, Color color) {
+  Widget _buildStatSquare(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return _glassCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -310,13 +454,29 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 16),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -330,7 +490,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Revenue Overview", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text(
+              "Revenue Overview",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 20),
             SizedBox(
               height: 150,
@@ -340,10 +507,11 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
                 children: [
                   _buildChartBar(0.4, "Jan"), _buildChartBar(0.6, "Feb"),
                   _buildChartBar(0.5, "Mar"), _buildChartBar(0.9, "Apr"),
-                  _buildChartBar(0.7, "May"), _buildChartBar(1.0, "Jun"), // Jun is peak
+                  _buildChartBar(0.7, "May"),
+                  _buildChartBar(1.0, "Jun"), // Jun is peak
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -362,13 +530,17 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [AppColors.accent, AppColors.accent.withOpacity(0.3)],
-              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
             borderRadius: BorderRadius.circular(6),
           ),
         ),
         const SizedBox(height: 8),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+        Text(
+          label,
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+        ),
       ],
     );
   }
@@ -379,8 +551,22 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-          Text(action, style: const TextStyle(color: AppColors.accent, fontSize: 14, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          Text(
+            action,
+            style: const TextStyle(
+              color: AppColors.accent,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -401,7 +587,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -425,16 +614,31 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          gradient: isSelected ? const LinearGradient(colors: [AppColors.primary, AppColors.secondary]) : null,
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [AppColors.primary, AppColors.secondary],
+                )
+              : null,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isSelected ? Colors.white : Colors.white.withOpacity(0.5), size: 24),
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              size: 24,
+            ),
             if (isSelected) ...[
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-            ]
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -460,7 +664,13 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
     );
   }
 
-  Widget _glassIconButton(IconData icon, {bool showBadge = false, double size = 46, double iconSize = 22, bool isGradient = false}) {
+  Widget _glassIconButton(
+    IconData icon, {
+    bool showBadge = false,
+    double size = 46,
+    double iconSize = 22,
+    bool isGradient = false,
+  }) {
     return Stack(
       children: [
         ClipRRect(
@@ -468,9 +678,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
-              height: size, width: size,
+              height: size,
+              width: size,
               decoration: BoxDecoration(
-                gradient: isGradient ? const LinearGradient(colors: [AppColors.primary, AppColors.secondary]) : null,
+                gradient: isGradient
+                    ? const LinearGradient(
+                        colors: [AppColors.primary, AppColors.secondary],
+                      )
+                    : null,
                 color: isGradient ? null : Colors.white.withOpacity(0.1),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white.withOpacity(0.2)),
@@ -481,23 +696,42 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> with Ticker
         ),
         if (showBadge)
           Positioned(
-            right: 4, top: 4,
+            right: 4,
+            top: 4,
             child: Container(
-              height: 10, width: 10,
-              decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+              height: 10,
+              width: 10,
+              decoration: const BoxDecoration(
+                color: Colors.redAccent,
+                shape: BoxShape.circle,
+              ),
             ),
-          )
+          ),
       ],
     );
   }
 
-  Widget _buildFloatingCircle({required double size, double? top, double? bottom, double? left, double? right, required Color color}) {
+  Widget _buildFloatingCircle({
+    required double size,
+    double? top,
+    double? bottom,
+    double? left,
+    double? right,
+    required Color color,
+  }) {
     return Positioned(
-      top: top, bottom: bottom, left: left, right: right,
+      top: top,
+      bottom: bottom,
+      left: left,
+      right: right,
       child: ClipOval(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(width: size, height: size, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+          ),
         ),
       ),
     );
@@ -522,22 +756,40 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'approved': return const Color(0xFF4CAF50);
-      case 'pending': return const Color(0xFFFF9800);
-      case 'cancelled': return const Color(0xFFF44336);
-      case 'completed': return AppColors.primary;
-      default: return Colors.grey;
+      case 'approved':
+        return const Color(0xFF4CAF50);
+      case 'pending':
+        return const Color(0xFFFF9800);
+      case 'cancelled':
+        return const Color(0xFFF44336);
+      case 'completed':
+        return AppColors.primary;
+      default:
+        return Colors.grey;
     }
   }
 
   Future<void> _updateStatus(String newStatus) async {
     setState(() => _isLoading = true);
     try {
-      await FirebaseFirestore.instance.collection('bookings').doc(widget.bookingId).update({'status': newStatus});
+      await FirebaseFirestore.instance
+          .collection('bookings')
+          .doc(widget.bookingId)
+          .update({'status': newStatus});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booking $newStatus successfully'), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Booking $newStatus successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update booking'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update booking'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -545,7 +797,8 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
 
   @override
   Widget build(BuildContext context) {
-    final status = widget.bookingData['status']?.toString().toUpperCase() ?? 'PENDING';
+    final status =
+        widget.bookingData['status']?.toString().toUpperCase() ?? 'PENDING';
     final statusColor = _getStatusColor(widget.bookingData['status'] ?? '');
     final customerName = widget.bookingData['customerName'] ?? 'Guest';
     final hotelName = widget.bookingData['hotelName'] ?? 'Unknown Hotel';
@@ -568,30 +821,60 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: Colors.white.withOpacity(0.1),
-                    child: Text(customerName[0].toUpperCase(), style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 20)),
+                    child: Text(
+                      customerName[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(customerName, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text(hotelName, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                        Text(
+                          customerName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          hotelName,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 13,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: statusColor.withOpacity(0.5)),
                     ),
-                    child: Text(status, style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      status,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              
+
               if (status == 'PENDING') ...[
                 const SizedBox(height: 16),
                 const Divider(color: Colors.white12, height: 1),
@@ -600,11 +883,15 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _isLoading ? null : () => _updateStatus('cancelled'),
+                        onPressed: _isLoading
+                            ? null
+                            : () => _updateStatus('cancelled'),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Colors.redAccent),
                           foregroundColor: Colors.redAccent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                         child: const Text("Reject"),
                       ),
@@ -612,20 +899,34 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : () => _updateStatus('approved'),
+                        onPressed: _isLoading
+                            ? null
+                            : () => _updateStatus('approved'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.backgroundDark1,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: _isLoading 
-                            ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: AppColors.backgroundDark1, strokeWidth: 2))
-                            : const Text("Approve", style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.backgroundDark1,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Approve",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                   ],
                 ),
-              ]
+              ],
             ],
           ),
         ),
