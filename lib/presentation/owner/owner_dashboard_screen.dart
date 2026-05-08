@@ -7,7 +7,9 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
 import 'owner_bookings_screen.dart';
-import 'owner_profile_screen.dart';import 'add_hotel_screen.dart';
+import 'owner_profile_screen.dart';
+import 'add_hotel_screen.dart';
+import 'owner_hotels_screen.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   const OwnerDashboardScreen({super.key});
@@ -354,80 +356,66 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   // 1. Add 'BuildContext context' to the parameters so we can navigate
   Widget _buildQuickActions(BuildContext context) {
-  final actions = [
-    {
-      "icon": Icons.add_business_rounded,
-      "label": "Add Hotel",
-      "onTap": () {
-        // TODO: Navigate to AddHotelScreen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add Hotel screen will be added')),
-        );
-      },
-    },
-    {
-      "icon": Icons.meeting_room_rounded,
-      "label": "Rooms",
-      "onTap": () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rooms screen will be added')),
-        );
-      },
-    },
-    {
-      "icon": Icons.receipt_long_rounded,
-      "label": "Requests",
-      "onTap": () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const OwnerBookingsScreen(),
-          ),
-        );
-      },
-    },
-    {
-      "icon": Icons.analytics_rounded,
-      "label": "Analytics",
-      "onTap": () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Analytics screen will be added')),
-        );
-      },
-    },
-  ];
+    final actions = [
+      {"icon": Icons.add_business_rounded, "label": "Add Hotel"},
+      {"icon": Icons.meeting_room_rounded, "label": "Rooms"},
+      {"icon": Icons.receipt_long_rounded, "label": "Requests"},
+      {"icon": Icons.analytics_rounded, "label": "Analytics"},
+    ];
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: actions.map((a) {
-        return GestureDetector(
-          onTap: a["onTap"] as VoidCallback,
-          child: Column(
-            children: [
-              _glassIconButton(
-                a["icon"] as IconData,
-                size: 56,
-                iconSize: 26,
-                isGradient: true,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                a["label"] as String,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: actions.map((a) {
+          // 2. Wrap the return in a GestureDetector
+          return GestureDetector(
+            onTap: () {
+              // 3. Route based on the label that was tapped
+              if (a["label"] == "Add Hotel") {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddHotelScreen(),
+                  ),
+                );
+              } else {
+                // Placeholder for the other buttons
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${a["label"]} screen coming soon!'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            // Use HitTestBehavior.opaque so tapping the empty space
+            // between the icon and the text still triggers the tap!
+            behavior: HitTestBehavior.opaque,
+            child: Column(
+              children: [
+                _glassIconButton(
+                  a["icon"] as IconData,
+                  size: 56,
+                  iconSize: 26,
+                  isGradient: true,
                 ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    ),
-  );
-}
+                const SizedBox(height: 8),
+                Text(
+                  a["label"] as String,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
 
   Widget _buildStatsGrid(Map<String, dynamic> analytics) {
     return Padding(
@@ -622,67 +610,77 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   }
 
   Widget _buildNavItem(int index, IconData icon, String label) {
-  final isSelected = _bottomNavIndex == index;
+    final isSelected = _bottomNavIndex == index;
 
-  return GestureDetector(
-    onTap: () {
-      if (index == 2) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const OwnerBookingsScreen(),
-          ),
-        );
-        return;
-      }
-      else if (index == 3) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const OwnerProfileScreen(),
-          ),
-        );
-        return;
-      }
-
-      setState(() {
-        _bottomNavIndex = index;
-      });
-    },
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: isSelected
-            ? const LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
-              )
-            : null,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
-            size: 24,
-          ),
-          if (isSelected) ...[
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+    return GestureDetector(
+      onTap: () {
+        // --- Added Index 1 (Hotels) ---
+        if (index == 1) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OwnerHotelsScreen()),
+          );
+          return;
+        }
+        // Index 2 (Requests)
+        else if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  const OwnerBookingsScreen(), // Assuming this is your requests screen
             ),
+          );
+          return;
+        }
+        // Index 3 (Profile)
+        else if (index == 3) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const OwnerProfileScreen()),
+          );
+          return;
+        }
+
+        // Index 0 (Dashboard) just updates the state
+        setState(() {
+          _bottomNavIndex = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [AppColors.primary, AppColors.secondary],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              size: 24,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _glassCard({required Widget child, EdgeInsetsGeometry? padding}) {
     return ClipRRect(
