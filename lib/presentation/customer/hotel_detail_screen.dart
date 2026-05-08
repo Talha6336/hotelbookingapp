@@ -1,8 +1,10 @@
 import 'dart:ui';
-import 'booking_screen.dart';
 
+import 'booking_screen.dart';
 import 'package:flutter/material.dart';
+
 import '../../core/theme/app_theme.dart';
+import 'single_hotel_map_screen.dart';
 
 class HotelDetailScreen extends StatelessWidget {
   final String hotelId;
@@ -22,6 +24,76 @@ class HotelDetailScreen extends StatelessWidget {
     return double.tryParse(value.toString()) ?? 0.0;
   }
 
+  List<String> _getAmenitiesList(dynamic value) {
+    if (value == null) {
+      return [
+        'Room Service',
+        'Restaurant',
+        'Free WiFi',
+        'Air Conditioning',
+        'Parking',
+      ];
+    }
+
+    if (value is List) {
+      return value.map((item) => item.toString()).toList();
+    }
+
+    if (value is String) {
+      return value
+          .split(',')
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+    }
+
+    return [
+      'Room Service',
+      'Restaurant',
+      'Free WiFi',
+      'Air Conditioning',
+      'Parking',
+    ];
+  }
+
+  IconData _getAmenityIcon(String amenity) {
+    final text = amenity.toLowerCase();
+
+    if (text.contains('wifi') || text.contains('internet')) {
+      return Icons.wifi_rounded;
+    }
+
+    if (text.contains('parking')) {
+      return Icons.local_parking_rounded;
+    }
+
+    if (text.contains('restaurant') ||
+        text.contains('food') ||
+        text.contains('breakfast')) {
+      return Icons.restaurant_rounded;
+    }
+
+    if (text.contains('air') ||
+        text.contains('ac') ||
+        text.contains('conditioning')) {
+      return Icons.ac_unit_rounded;
+    }
+
+    if (text.contains('pool') || text.contains('swimming')) {
+      return Icons.pool_rounded;
+    }
+
+    if (text.contains('spa')) {
+      return Icons.spa_rounded;
+    }
+
+    if (text.contains('room service')) {
+      return Icons.room_service_rounded;
+    }
+
+    return Icons.check_circle_outline_rounded;
+  }
+
   @override
   Widget build(BuildContext context) {
     final String imageUrl = hotel['imageUrl'] ?? '';
@@ -32,6 +104,9 @@ class HotelDetailScreen extends StatelessWidget {
         hotel['description'] ?? 'No description available.';
     final double price = _toDouble(hotel['pricePerNight']);
     final double rating = _toDouble(hotel['rating']);
+
+    // Firestore amenities array
+    final List<String> amenities = _getAmenitiesList(hotel['amenities']);
 
     return Scaffold(
       body: Stack(
@@ -108,14 +183,14 @@ class HotelDetailScreen extends StatelessWidget {
                         _buildSectionTitle('Location'),
                         const SizedBox(height: 10),
 
-                        _buildMapPreview(),
+                        _buildMapPreview(context),
 
                         const SizedBox(height: 20),
 
-                        _buildSectionTitle('Facilities'),
+                        _buildSectionTitle('Amenities'),
                         const SizedBox(height: 10),
 
-                        _buildFacilities(),
+                        _buildFacilities(amenities),
                       ],
                     ),
                   ),
@@ -127,7 +202,6 @@ class HotelDetailScreen extends StatelessWidget {
           _buildBottomBookingBar(
             context: context,
             price: price,
-            hotelName: name,
           ),
         ],
       ),
@@ -308,11 +382,13 @@ class HotelDetailScreen extends StatelessWidget {
                     size: 18,
                   ),
                   const SizedBox(width: 5),
-                  Text(
-                    city,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.75),
-                      fontSize: 14,
+                  Expanded(
+                    child: Text(
+                      city,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.75),
+                        fontSize: 14,
+                      ),
                     ),
                   ),
                 ],
@@ -421,7 +497,7 @@ class HotelDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMapPreview() {
+  Widget _buildMapPreview(BuildContext context) {
     return _buildGlassInfoCard(
       child: Container(
         height: 150,
@@ -442,65 +518,58 @@ class HotelDetailScreen extends StatelessWidget {
               ),
             ),
             Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      color: AppColors.backgroundDark1,
-                      size: 18,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'View on Map',
-                      style: TextStyle(
-                        color: AppColors.backgroundDark1,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  child: GestureDetector(
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SingleHotelMapScreen(
+            hotel: hotel,
+          ),
+        ),
+      );
+    },
+    child: Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accent,
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.location_on,
+            color: AppColors.backgroundDark1,
+            size: 18,
+          ),
+          SizedBox(width: 6),
+          Text(
+            'View on Map',
+            style: TextStyle(
+              color: AppColors.backgroundDark1,
+              fontWeight: FontWeight.bold,
             ),
+          ),
+        ],
+      ),
+    ),
+  ),
+),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFacilities() {
-    final facilities = [
-      {
-        'icon': Icons.wifi_rounded,
-        'text': 'Free WiFi',
-      },
-      {
-        'icon': Icons.local_parking_rounded,
-        'text': 'Parking',
-      },
-      {
-        'icon': Icons.restaurant_rounded,
-        'text': 'Food',
-      },
-      {
-        'icon': Icons.ac_unit_rounded,
-        'text': 'AC Rooms',
-      },
-    ];
-
+  Widget _buildFacilities(List<String> amenities) {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: facilities.map((item) {
+      children: amenities.map((amenity) {
         return ClipRRect(
           borderRadius: BorderRadius.circular(18),
           child: BackdropFilter(
@@ -521,13 +590,13 @@ class HotelDetailScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    item['icon'] as IconData,
+                    _getAmenityIcon(amenity),
                     color: AppColors.accent,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    item['text'] as String,
+                    amenity,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -545,7 +614,6 @@ class HotelDetailScreen extends StatelessWidget {
   Widget _buildBottomBookingBar({
     required BuildContext context,
     required double price,
-    required String hotelName,
   }) {
     return Positioned(
       left: 0,
@@ -602,16 +670,16 @@ class HotelDetailScreen extends StatelessWidget {
                   height: 54,
                   child: ElevatedButton(
                     onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => BookingScreen(
-        hotelId: hotelId,
-        hotel: hotel,
-      ),
-    ),
-  );
-},
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookingScreen(
+                            hotelId: hotelId,
+                            hotel: hotel,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       foregroundColor: AppColors.backgroundDark1,

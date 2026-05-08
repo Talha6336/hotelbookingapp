@@ -11,6 +11,7 @@ import '../widgets/hotel_card.dart';
 import 'hotel_detail_screen.dart';
 import 'customer_bookings_screen.dart';
 import 'profile_screen.dart';
+import 'hotels_map_screen.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
   const CustomerDashboardScreen({super.key});
@@ -172,14 +173,13 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                             title: 'Featured Hotels',
                             actionText: 'View Map',
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Map screen will be added next',
-                                  ),
-                                ),
-                              );
-                            },
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HotelsMapScreen(),
+                              ),
+                            );
+                          },
                           ),
 
                           _buildFeaturedHotels(hotels),
@@ -549,7 +549,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen>
                 icon: Icons.map_outlined,
                 label: 'Map',
                 selected: false,
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const HotelsMapScreen(),
+                    ),
+                  );
+                },
               ),
               _bottomItem(
                 icon: Icons.bookmark_border_rounded,
