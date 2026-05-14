@@ -12,7 +12,12 @@
           "package_name": "com.example.hotelbookingapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "436396043605-0i3omk7mrj83c6gh379ngrpopmahmg08.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBViFXnpqQ8RKqM7tkHuZOZQBB4NIpdY1w"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "436396043605-0i3omk7mrj83c6gh379ngrpopmahmg08.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "436396043605-b59jkol66rjdo41e1qe7agpbr1sc536p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.hotelbookingapp"
+              }
+            }
+          ]
         }
       }
     }

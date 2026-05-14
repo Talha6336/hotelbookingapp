@@ -2,8 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
-// Assuming you have your core colors defined. Repeating them here for clarity.
 class AppColors {
   static const Color primary = Color(0xFF3F51B5);
   static const Color secondary = Color(0xFF7E57C2);
@@ -80,14 +80,12 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = true);
 
     try {
-      // 1. Authenticate with Firebase
       final userCredential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
 
-      // 2. Fetch User Role from Firestore
       if (userCredential.user != null) {
         final doc = await FirebaseFirestore.instance
             .collection('users')
@@ -98,7 +96,6 @@ class _LoginScreenState extends State<LoginScreen>
 
         if (!mounted) return;
 
-        // 3. Navigate based on role
         if (role == 'owner') {
           Navigator.of(context).pushReplacementNamed('/owner_nav');
         } else {
@@ -109,6 +106,139 @@ class _LoginScreenState extends State<LoginScreen>
       _showErrorSnackBar(e.message ?? "Authentication failed.");
     } catch (e) {
       _showErrorSnackBar("An error occurred. Please try again.");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<String?> _showRoleSelectionDialog() async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false, // Forces them to make a choice
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A237E), // Match your dark theme
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            "Welcome to StayEase!",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "To complete your profile, please tell us how you will be using the app:",
+            style: TextStyle(color: Colors.white70),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context, 'customer'),
+              icon: const Icon(Icons.luggage, color: Colors.white, size: 18),
+              label: const Text(
+                "Book Hotels",
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.1),
+                elevation: 0,
+              ),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(context, 'owner'),
+              icon: const Icon(
+                Icons.domain,
+                color: Color(0xFF1A237E),
+                size: 18,
+              ),
+              label: const Text(
+                "List Hotels",
+                style: TextStyle(
+                  color: Color(0xFF1A237E),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFC107), // AppColors.accent
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- UPDATED: Google Sign-In Logic ---
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(scopes: ['email']);
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return; // User canceled
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithCredential(credential);
+
+      if (userCredential.user != null) {
+        final user = userCredential.user!;
+        final userDocRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid);
+        final docSnapshot = await userDocRef.get();
+
+        String role;
+
+        // --- NEW LOGIC: Check if New or Existing User ---
+        if (!docSnapshot.exists) {
+          // New User! Stop and ask for their role using our dialog
+          final selectedRole = await _showRoleSelectionDialog();
+
+          if (selectedRole == null) {
+            // If something went wrong and they didn't pick, cancel signup
+            await user.delete();
+            setState(() => _isLoading = false);
+            return;
+          }
+
+          role = selectedRole;
+
+          // Save the brand new Google user to Firestore with their chosen role
+          await userDocRef.set({
+            'uid': user.uid,
+            'name': user.displayName ?? 'Google User',
+            'email': user.email,
+            'role': role,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          // Existing user! Just grab their role from the database
+          role = docSnapshot.data()?['role'] ?? 'customer';
+        }
+
+        if (!mounted) return;
+
+        // Finally, navigate them to the correct dashboard!
+        if (role == 'owner') {
+          Navigator.of(context).pushReplacementNamed('/owner_nav');
+        } else {
+          Navigator.of(context).pushReplacementNamed('/customer_nav');
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      _showErrorSnackBar(e.message ?? "Google Sign-In failed.");
+    } catch (e) {
+      _showErrorSnackBar("An error occurred during Google Sign-In.");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -127,17 +257,12 @@ class _LoginScreenState extends State<LoginScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: Stack(
         children: [
-          // 1. Luxury Background Image
           Positioned.fill(
             child: Image.asset('assets/images/hotel_bg.jpg', fit: BoxFit.cover),
           ),
-
-          // 2. Dark Gradient Overlay for Readability
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -154,8 +279,6 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
           ),
-
-          // 3. Main Content (Scrollable to prevent keyboard overflow)
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -257,18 +380,14 @@ class _LoginScreenState extends State<LoginScreen>
                 isPassword: true,
               ),
               const SizedBox(height: 12),
-
-              // Forgot Password Text
               TextButton(
-                onPressed: () {
-                  // Navigate to forgot password screen
-                },
+                onPressed: () {},
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: Text(
+                child: const Text(
                   "Forgot Password?",
                   style: TextStyle(
                     color: AppColors.accent,
@@ -278,8 +397,6 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Login Button
               _buildLoginButton(),
             ],
           ),
@@ -393,9 +510,8 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildGoogleSignInButton() {
     return OutlinedButton.icon(
-      onPressed: () {
-        // Implement Google Sign In
-      },
+      // --- NEW: Connected the logic here ---
+      onPressed: _isLoading ? null : _signInWithGoogle,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
         side: BorderSide(color: Colors.white.withOpacity(0.4), width: 1.5),
@@ -408,11 +524,7 @@ class _LoginScreenState extends State<LoginScreen>
           color: Colors.white,
           shape: BoxShape.circle,
         ),
-        child: const Icon(
-          Icons.g_mobiledata,
-          color: Colors.black,
-          size: 24,
-        ), // Google Icon placeholder
+        child: const Icon(Icons.g_mobiledata, color: Colors.black, size: 24),
       ),
       label: const Text(
         "Continue with Google",
