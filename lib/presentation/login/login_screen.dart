@@ -237,9 +237,12 @@ class _LoginScreenState extends State<LoginScreen>
       }
     } on FirebaseAuthException catch (e) {
       _showErrorSnackBar(e.message ?? "Google Sign-In failed.");
-    } catch (e) {
-      _showErrorSnackBar("An error occurred during Google Sign-In.");
-    } finally {
+   } catch (e, stackTrace) {
+  debugPrint("Google Sign-In Error: $e");
+  debugPrint("StackTrace: $stackTrace");
+
+  _showErrorSnackBar("Google Sign-In Error: $e");
+} finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }

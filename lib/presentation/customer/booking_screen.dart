@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../notifications/notification_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final String hotelId;
@@ -128,6 +129,13 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    final String ownerId = widget.hotel['ownerId']?.toString() ?? '';
+
+    if (ownerId.isEmpty) {
+      _showSnackBar('Hotel owner information is missing.');
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
@@ -142,15 +150,18 @@ class _BookingScreenState extends State<BookingScreen> {
 
       if (userDoc.exists) {
         final userData = userDoc.data();
-
         customerName = userData?['name'] ?? 'Customer';
       }
 
-     await FirebaseFirestore.instance.collection('bookings').add({
+      final String hotelName = widget.hotel['name'] ?? 'Unknown Hotel';
+
+      final bookingRef =
+          await FirebaseFirestore.instance.collection('bookings').add({
         'userId': currentUser.uid,
-        'ownerId': widget.hotel['ownerId'] ?? '',
+        'customerId': currentUser.uid,
+        'ownerId': ownerId,
         'hotelId': widget.hotelId,
-        'hotelName': widget.hotel['name'] ?? 'Unknown Hotel',
+        'hotelName': hotelName,
         'hotelImage': widget.hotel['imageUrl'] ?? '',
         'customerName': customerName,
         'checkInDate': Timestamp.fromDate(checkInDate!),
@@ -160,6 +171,15 @@ class _BookingScreenState extends State<BookingScreen> {
         'status': 'pending',
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      await NotificationService.notifyOwnerNewBooking(
+        ownerId: ownerId,
+        bookingId: bookingRef.id,
+        hotelId: widget.hotelId,
+        hotelName: hotelName,
+        customerName: customerName,
+      );
+
       if (!mounted) return;
 
       _showSuccessDialog();

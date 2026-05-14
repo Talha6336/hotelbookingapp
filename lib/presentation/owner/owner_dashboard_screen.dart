@@ -7,6 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../notifications/notification_button.dart';
+import '../notifications/notification_service.dart';
+
 import 'add_hotel_screen.dart';
 import 'owner_bookings_screen.dart';
 import 'owner_profile_screen.dart';
@@ -410,16 +413,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
               Row(
                 children: [
-                  _glassIconButton(
-                    Icons.notifications_none_rounded,
-                    showBadge: true,
-                  ),
+                  const NotificationButton(),
                   const SizedBox(width: 12),
                   CircleAvatar(
                     radius: 22,
                     backgroundColor: Colors.white.withOpacity(0.12),
-                    backgroundImage:
-                        profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                    backgroundImage: profileImage.isNotEmpty
+                        ? NetworkImage(profileImage)
+                        : null,
                     child: profileImage.isEmpty
                         ? const Icon(
                             Icons.person_rounded,
@@ -978,62 +979,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     );
   }
 
-  Widget _glassIconButton(
-    IconData icon, {
-    bool showBadge = false,
-    double size = 46,
-    double iconSize = 22,
-    bool isGradient = false,
-  }) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(size / 2),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-            child: Container(
-              height: size,
-              width: size,
-              decoration: BoxDecoration(
-                gradient: isGradient
-                    ? const LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          AppColors.secondary,
-                        ],
-                      )
-                    : null,
-                color: isGradient ? null : Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
-                ),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: iconSize,
-              ),
-            ),
-          ),
-        ),
-        if (showBadge)
-          Positioned(
-            right: 4,
-            top: 4,
-            child: Container(
-              height: 10,
-              width: 10,
-              decoration: const BoxDecoration(
-                color: Colors.redAccent,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
   Widget _buildFloatingCircle({
     required double size,
     double? top,
@@ -1142,6 +1087,19 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
     setState(() => _isLoading = true);
 
     try {
+      final String customerId =
+          widget.bookingData['customerId']?.toString() ??
+              widget.bookingData['userId']?.toString() ??
+              '';
+
+      final String hotelId = widget.bookingData['hotelId']?.toString() ?? '';
+      final String hotelName =
+          widget.bookingData['hotelName']?.toString() ?? 'Unknown Hotel';
+
+      if (customerId.isEmpty) {
+        throw Exception('Customer id is missing in this booking.');
+      }
+
       await FirebaseFirestore.instance
           .collection('bookings')
           .doc(widget.bookingId)
@@ -1149,6 +1107,23 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
         'status': newStatus,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      if (newStatus == 'accepted') {
+        await NotificationService.notifyCustomerBookingApproved(
+          customerId: customerId,
+          bookingId: widget.bookingId,
+          hotelId: hotelId,
+          hotelName: hotelName,
+        );
+      } else if (newStatus == 'rejected') {
+        await NotificationService.notifyCustomerBookingRejected(
+          customerId: customerId,
+          bookingId: widget.bookingId,
+          hotelId: hotelId,
+          hotelName: hotelName,
+          reason: null,
+        );
+      }
 
       if (!mounted) return;
 
@@ -1185,7 +1160,6 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
     final Color statusColor = _getStatusColor(rawStatus);
 
     final String customerName = widget.bookingData['customerName'] ?? 'Guest';
-
     final String hotelName = widget.bookingData['hotelName'] ?? 'Unknown Hotel';
 
     final num totalPrice = widget.bookingData['totalPrice'] ?? 0;

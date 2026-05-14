@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
+import '../notifications/notification_service.dart';
 
 class OwnerBookingsScreen extends StatelessWidget {
   const OwnerBookingsScreen({super.key});
@@ -23,6 +24,33 @@ class OwnerBookingsScreen extends StatelessWidget {
         .snapshots();
   }
 
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _sortBookingsNewestFirst(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
+  ) {
+    final sortedBookings = [...docs];
+
+    sortedBookings.sort((a, b) {
+      final aCreatedAt = a.data()['createdAt'];
+      final bCreatedAt = b.data()['createdAt'];
+
+      if (aCreatedAt is Timestamp && bCreatedAt is Timestamp) {
+        return bCreatedAt.compareTo(aCreatedAt);
+      }
+
+      if (aCreatedAt == null && bCreatedAt != null) {
+        return 1;
+      }
+
+      if (aCreatedAt != null && bCreatedAt == null) {
+        return -1;
+      }
+
+      return 0;
+    });
+
+    return sortedBookings;
+  }
+
   String _formatDate(dynamic value) {
     if (value == null) return 'N/A';
 
@@ -35,7 +63,7 @@ class OwnerBookingsScreen extends StatelessWidget {
   }
 
   Color _statusColor(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'accepted':
         return Colors.greenAccent;
       case 'rejected':
@@ -53,13 +81,55 @@ class OwnerBookingsScreen extends StatelessWidget {
     required String status,
   }) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('bookings')
-          .doc(bookingId)
-          .update({
+      final firestore = FirebaseFirestore.instance;
+
+      final bookingRef = firestore.collection('bookings').doc(bookingId);
+      final bookingSnapshot = await bookingRef.get();
+
+      if (!bookingSnapshot.exists) {
+        throw Exception('Booking not found');
+      }
+
+      final bookingData = bookingSnapshot.data();
+
+      if (bookingData == null) {
+        throw Exception('Booking data is empty');
+      }
+
+      final String customerId =
+          bookingData['customerId']?.toString() ??
+          bookingData['userId']?.toString() ??
+          '';
+
+      final String hotelId = bookingData['hotelId']?.toString() ?? '';
+      final String hotelName =
+          bookingData['hotelName']?.toString() ?? 'Unknown Hotel';
+
+      if (customerId.isEmpty) {
+        throw Exception('Customer ID is missing in booking');
+      }
+
+      await bookingRef.update({
         'status': status,
         'updatedAt': FieldValue.serverTimestamp(),
       });
+
+      if (status == 'accepted') {
+        await NotificationService.notifyCustomerBookingApproved(
+          customerId: customerId,
+          bookingId: bookingId,
+          hotelId: hotelId,
+          hotelName: hotelName,
+        );
+      } else if (status == 'rejected') {
+        await NotificationService.notifyCustomerBookingRejected(
+          customerId: customerId,
+          bookingId: bookingId,
+          hotelId: hotelId,
+          hotelName: hotelName,
+          reason: null,
+        );
+      }
 
       if (!context.mounted) return;
 
@@ -67,6 +137,7 @@ class OwnerBookingsScreen extends StatelessWidget {
         SnackBar(
           content: Text('Booking $status successfully'),
           behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
@@ -206,6 +277,10 @@ class OwnerBookingsScreen extends StatelessWidget {
                             }
 
                             if (snapshot.hasError) {
+                              debugPrint(
+                                'Owner bookings error: ${snapshot.error}',
+                              );
+
                               return _buildMessageState(
                                 icon: Icons.error_outline,
                                 title: 'Something went wrong',
@@ -224,7 +299,9 @@ class OwnerBookingsScreen extends StatelessWidget {
                               );
                             }
 
-                            final bookings = snapshot.data!.docs;
+                            final bookings = _sortBookingsNewestFirst(
+                              snapshot.data!.docs,
+                            );
 
                             return ListView.builder(
                               physics: const BouncingScrollPhysics(),
@@ -508,22 +585,25 @@ class OwnerBookingsScreen extends StatelessWidget {
     EdgeInsets margin = EdgeInsets.zero,
     EdgeInsets padding = const EdgeInsets.all(18),
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          width: double.infinity,
-          margin: margin,
-          padding: padding,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.20),
+    return Container(
+      width: double.infinity,
+      margin: margin,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            width: double.infinity,
+            padding: padding,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.20),
+              ),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );
