@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 // Map Imports
 import 'package:flutter_map/flutter_map.dart';
@@ -23,7 +24,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
   final _addressController = TextEditingController();
@@ -33,20 +33,22 @@ class _AddHotelScreenState extends State<AddHotelScreen>
   final _checkInController = TextEditingController(text: "14:00");
   final _checkOutController = TextEditingController(text: "11:00");
 
-  // State Variables
   bool _isLoading = false;
+  bool _isLocating = false;
+  bool _isMapReady = false;
+
   String _selectedCategory = 'Luxury';
-  List<String> _uploadedImageUrls = [];
-  Set<String> _selectedAmenities = {};
+  final List<String> _uploadedImageUrls = [];
+  final Set<String> _selectedAmenities = {};
 
-  // Map Variables
   LatLng? _selectedLocation;
-  final LatLng _initialMapCenter = const LatLng(31.4187, 73.0791); // Faisalabad
+  LatLng? _currentUserLocation;
+  LatLng? _pendingMoveLocation;
 
- 
- 
+  final MapController _mapController = MapController();
 
-  // Data Sources
+  final LatLng _fallbackMapCenter = const LatLng(31.4187, 73.0791);
+
   final List<String> _categories = [
     'Luxury',
     'Budget',
@@ -71,12 +73,16 @@ class _AddHotelScreenState extends State<AddHotelScreen>
   @override
   void initState() {
     super.initState();
-   
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _moveToCurrentLocation();
+      }
+    });
   }
 
   @override
   void dispose() {
-
     _nameController.dispose();
     _descController.dispose();
     _addressController.dispose();
@@ -86,6 +92,130 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     _checkInController.dispose();
     _checkOutController.dispose();
     super.dispose();
+  }
+
+  void _safeMoveMap(LatLng location, {double zoom = 16}) {
+    _pendingMoveLocation = location;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      if (!_isMapReady) return;
+
+      try {
+        _mapController.move(location, zoom);
+        _pendingMoveLocation = null;
+      } catch (_) {
+        // Do not show any error here.
+        // Sometimes flutter_map controller becomes ready a little late.
+      }
+    });
+  }
+
+  Future<void> _moveToCurrentLocation({bool selectLocation = false}) async {
+    if (_isLocating) return;
+
+    setState(() {
+      _isLocating = true;
+    });
+
+    try {
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        _showSnackBar(
+          "Location service is off. Please turn on GPS/location.",
+          isError: true,
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        _showSnackBar(
+          "Location permission denied. Please allow location permission.",
+          isError: true,
+        );
+        return;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showSnackBar(
+          "Location permission is permanently denied. Enable it from app settings.",
+          isError: true,
+        );
+
+        await Geolocator.openAppSettings();
+        return;
+      }
+
+      Position? position;
+
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 10),
+        );
+      } catch (_) {
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      if (position == null) {
+        _showSnackBar(
+          "Could not get location. Please turn on GPS and try again.",
+          isError: true,
+        );
+        return;
+      }
+
+      final LatLng userLocation = LatLng(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentUserLocation = userLocation;
+
+        if (selectLocation) {
+          _selectedLocation = userLocation;
+        }
+      });
+
+      _safeMoveMap(userLocation, zoom: 16);
+    } catch (_) {
+      if (!mounted) return;
+
+      _showSnackBar(
+        "Cannot get your location.",
+        isError: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
+  }
+
+  void _selectCurrentLocation() {
+    if (_currentUserLocation == null) {
+      _moveToCurrentLocation(selectLocation: true);
+      return;
+    }
+
+    setState(() {
+      _selectedLocation = _currentUserLocation;
+    });
+
+    _safeMoveMap(_currentUserLocation!, zoom: 16);
   }
 
   Future<void> _saveHotel() async {
@@ -102,22 +232,24 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       return;
     }
 
-    // Require Map Location
     if (_selectedLocation == null) {
       _showSnackBar(
-        "Please tap on the map to pin your hotel's location.",
+        "Please tap on the map or use your current location.",
         isError: true,
       );
-      return; 
+      return;
     }
 
     final user = FirebaseAuth.instance.currentUser;
+
     if (user == null) {
       _showSnackBar("You must be logged in to add a hotel.", isError: true);
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       await FirebaseFirestore.instance.collection('hotels').add({
@@ -135,7 +267,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         'images': _uploadedImageUrls,
         'imageUrl': _uploadedImageUrls.first,
         'rating': 0.0,
-        // Save the dynamic map coordinates!
         'latitude': _selectedLocation!.latitude,
         'longitude': _selectedLocation!.longitude,
         'createdAt': FieldValue.serverTimestamp(),
@@ -148,14 +279,23 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     } catch (e) {
       _showSnackBar("Failed to save hotel: $e", isError: true);
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void _showSnackBar(String message, {required bool isError}) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white)),
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: isError ? Colors.redAccent : Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
@@ -169,9 +309,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
+            decoration: const BoxDecoration(
+              gradient: AppColors.darkGradient,
+            ),
           ),
-         
           SafeArea(
             child: Column(
               children: [
@@ -191,24 +332,18 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                           _buildSectionTitle("Hotel Images"),
                           _buildImageUploadSection(),
                           const SizedBox(height: 24),
-
                           _buildSectionTitle("Basic Information"),
                           _buildDetailsForm(),
                           const SizedBox(height: 24),
-
                           _buildSectionTitle("Category"),
                           _buildCategorySelection(),
                           const SizedBox(height: 24),
-
                           _buildSectionTitle("Amenities"),
                           _buildAmenitiesSelection(),
                           const SizedBox(height: 24),
-
-                          // NEW: Interactive Map Section
                           _buildSectionTitle("Location"),
                           _buildInteractiveMap(),
                           const SizedBox(height: 32),
-
                           _buildSaveButton(),
                           const SizedBox(height: 40),
                         ],
@@ -224,10 +359,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     );
   }
 
-  // ===========================================================================
-  // UI COMPONENTS
-  // ===========================================================================
-
   Widget _buildAppBar() {
     return ClipRRect(
       child: BackdropFilter(
@@ -237,7 +368,9 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.05),
             border: Border(
-              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              bottom: BorderSide(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
           ),
           child: Row(
@@ -264,6 +397,8 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                   children: [
                     Text(
                       "Add New Hotel",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -272,12 +407,20 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                     ),
                     Text(
                       "Create and manage your luxury property",
-                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.help_outline_rounded, color: Colors.white70),
+              const Icon(
+                Icons.help_outline_rounded,
+                color: Colors.white70,
+              ),
             ],
           ),
         ),
@@ -314,9 +457,11 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                         top: 4,
                         right: 16,
                         child: GestureDetector(
-                          onTap: () => setState(
-                            () => _uploadedImageUrls.removeAt(index),
-                          ),
+                          onTap: () {
+                            setState(() {
+                              _uploadedImageUrls.removeAt(index);
+                            });
+                          },
                           child: Container(
                             padding: const EdgeInsets.all(4),
                             decoration: const BoxDecoration(
@@ -440,12 +585,27 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       controller: controller,
       maxLines: maxLines,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(color: Colors.white, fontSize: 14),
-      validator: (value) => value!.isEmpty ? "Required" : null,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return "Required";
+        }
+
+        return null;
+      },
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-        prefixIcon: Icon(icon, color: AppColors.accent, size: 20),
+        hintStyle: TextStyle(
+          color: Colors.white.withValues(alpha: 0.5),
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: AppColors.accent,
+          size: 20,
+        ),
         filled: true,
         fillColor: Colors.black.withValues(alpha: 0.2),
         border: OutlineInputBorder(
@@ -454,7 +614,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.accent,
+            width: 1.5,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 16,
@@ -470,17 +633,28 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: _categories.map((category) {
-          final isSelected = _selectedCategory == category;
+          final bool isSelected = _selectedCategory == category;
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = category),
+            onTap: () {
+              setState(() {
+                _selectedCategory = category;
+              });
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? const LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
+                        colors: [
+                          AppColors.primary,
+                          AppColors.secondary,
+                        ],
                       )
                     : null,
                 color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
@@ -520,18 +694,25 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         spacing: 12,
         runSpacing: 12,
         children: _amenitiesList.map((amenity) {
-          final isSelected = _selectedAmenities.contains(amenity['name']);
+          final String amenityName = amenity['name'];
+          final bool isSelected = _selectedAmenities.contains(amenityName);
+
           return GestureDetector(
             onTap: () {
               setState(() {
-                isSelected
-                    ? _selectedAmenities.remove(amenity['name'])
-                    : _selectedAmenities.add(amenity['name']);
+                if (isSelected) {
+                  _selectedAmenities.remove(amenityName);
+                } else {
+                  _selectedAmenities.add(amenityName);
+                }
               });
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.accent.withValues(alpha: 0.2)
@@ -553,13 +734,12 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    amenity['name'],
+                    amenityName,
                     style: TextStyle(
                       color: isSelected ? AppColors.accent : Colors.white70,
                       fontSize: 13,
-                      fontWeight: isSelected
-                          ? FontWeight.bold
-                          : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -571,27 +751,32 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     );
   }
 
-  // ===========================================================================
-  // INTERACTIVE MAP COMPONENT
-  // ===========================================================================
   Widget _buildInteractiveMap() {
     return _glassCard(
-      padding: const EdgeInsets.all(
-        4,
-      ), // Small padding so the glass effect frames the map perfectly
+      padding: const EdgeInsets.all(4),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
-          height: 240,
+          height: 290,
           width: double.infinity,
           child: Stack(
             children: [
               FlutterMap(
+                mapController: _mapController,
                 options: MapOptions(
-                  initialCenter: _initialMapCenter,
-                  initialZoom: 12,
+                  initialCenter: _currentUserLocation ?? _fallbackMapCenter,
+                  initialZoom: _currentUserLocation == null ? 12 : 16,
+                  onMapReady: () {
+                    _isMapReady = true;
+
+                    final LatLng? target =
+                        _pendingMoveLocation ?? _currentUserLocation;
+
+                    if (target != null) {
+                      _safeMoveMap(target, zoom: 16);
+                    }
+                  },
                   onTap: (tapPosition, point) {
-                    // Update state with the exact coordinates tapped
                     setState(() {
                       _selectedLocation = point;
                     });
@@ -604,25 +789,44 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                     subdomains: const ['a', 'b', 'c', 'd'],
                     userAgentPackageName: 'com.example.hotelbookingapp',
                   ),
-                  if (_selectedLocation != null)
-                    MarkerLayer(
-                      markers: [
+                  MarkerLayer(
+                    markers: [
+                      if (_currentUserLocation != null)
+                        Marker(
+                          point: _currentUserLocation!,
+                          width: 54,
+                          height: 54,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.18),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.blueAccent,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.my_location_rounded,
+                              color: Colors.blueAccent,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      if (_selectedLocation != null)
                         Marker(
                           point: _selectedLocation!,
-                          width: 50,
-                          height: 50,
+                          width: 58,
+                          height: 58,
                           child: const Icon(
                             Icons.location_on,
                             color: AppColors.accent,
-                            size: 44,
+                            size: 50,
                           ),
                         ),
-                      ],
-                    ),
+                    ],
+                  ),
                 ],
               ),
-
-              // Floating Coordinates / Instruction Bar
               Positioned(
                 top: 12,
                 left: 12,
@@ -630,7 +834,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     vertical: 10,
-                    horizontal: 16,
+                    horizontal: 14,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.backgroundDark1.withValues(alpha: 0.88),
@@ -643,7 +847,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         _selectedLocation == null
@@ -658,7 +861,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                       Expanded(
                         child: Text(
                           _selectedLocation == null
-                              ? "Tap map to set hotel location"
+                              ? "Tap map or use current location"
                               : "Lat: ${_selectedLocation!.latitude.toStringAsFixed(4)}, Lng: ${_selectedLocation!.longitude.toStringAsFixed(4)}",
                           style: TextStyle(
                             color: _selectedLocation == null
@@ -675,8 +878,87 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                   ),
                 ),
               ),
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _mapActionButton(
+                      icon: Icons.my_location_rounded,
+                      label: _isLocating ? "Locating..." : "My Location",
+                      onTap: _isLocating
+                          ? null
+                          : () {
+                              _moveToCurrentLocation();
+                            },
+                    ),
+                    const SizedBox(height: 10),
+                    _mapActionButton(
+                      icon: Icons.add_location_alt_rounded,
+                      label: "Use This",
+                      onTap: _isLocating ? null : _selectCurrentLocation,
+                      isPrimary: true,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _mapActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onTap,
+    bool isPrimary = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        decoration: BoxDecoration(
+          color: isPrimary
+              ? AppColors.accent
+              : AppColors.backgroundDark1.withValues(alpha: 0.90),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isPrimary
+                ? AppColors.accent
+                : Colors.white.withValues(alpha: 0.20),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isPrimary ? AppColors.backgroundDark1 : Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isPrimary ? AppColors.backgroundDark1 : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -689,7 +971,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.secondary],
+            colors: [
+              AppColors.primary,
+              AppColors.secondary,
+            ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
@@ -747,7 +1032,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     );
   }
 
-  Widget _glassCard({required Widget child, required EdgeInsets padding}) {
+  Widget _glassCard({
+    required Widget child,
+    required EdgeInsets padding,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -758,12 +1046,13 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+            ),
           ),
           child: child,
         ),
       ),
     );
   }
-
-  
+}

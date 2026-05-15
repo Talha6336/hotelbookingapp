@@ -9,7 +9,8 @@ import '../widgets/app_background.dart';
 import '../notifications/notification_service.dart';
 
 class OwnerBookingsScreen extends StatelessWidget {
-  const OwnerBookingsScreen({super.key});
+  final VoidCallback? onBackToHome;
+  const OwnerBookingsScreen({super.key, this.onBackToHome});
 
   Stream<QuerySnapshot<Map<String, dynamic>>> _ownerBookingsStream() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -334,7 +335,13 @@ class OwnerBookingsScreen extends StatelessWidget {
       children: [
         _circleGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
-          onTap: () => Navigator.pop(context),
+          onTap: () {
+            if(onBackToHome!=null){
+              onBackToHome!();
+            }else if(Navigator.canPop(context)){
+              Navigator.pop(context);
+            }
+          },
         ),
         const Spacer(),
         _circleGlassButton(

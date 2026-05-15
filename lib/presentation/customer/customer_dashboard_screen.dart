@@ -107,9 +107,28 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
             index: _bottomNavIndex,
             children: [
               _buildHomeTab(), // Index 0
-              const HotelsMapScreen(), // Index 1
-              const CustomerBookingsScreen(), // Index 2
-              const ProfileScreen(), // Index 3
+              HotelsMapScreen(onBackToHome: (){
+                setState(() {
+                  _bottomNavIndex=0;
+                });
+              },), // Index 1
+              CustomerBookingsScreen(onBackToHome: () {
+                  setState(() {
+                    _bottomNavIndex = 0;
+                  });
+                },), // Index 2
+              ProfileScreen(
+                onBackToHome: () {
+                  setState(() {
+                    _bottomNavIndex = 0;
+                  });
+                },
+                onOpenBookings: () {
+                  setState(() {
+                    _bottomNavIndex = 2;
+                  });
+                },
+              ), // Index 3
             ],
           ),
 
@@ -138,7 +157,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
           child: SizedBox.expand(),
         ),
 
-        const _StaticGlowBackground(),
+       
 
         SafeArea(
           bottom: false,
@@ -376,29 +395,36 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
           child: Row(
             children: [
-              Container(
-                height: 52,
-                width: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.22),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _bottomNavIndex=3;
+                  });
+                },
+                child: Container(
+                  height: 52,
+                  width: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
                   ),
+                  clipBehavior: Clip.antiAlias,
+                  child: profileImage.isNotEmpty
+                      ? Image.network(
+                          profileImage,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person_outline,
+                              color: Colors.white,
+                            );
+                          },
+                        )
+                      : const Icon(Icons.person_outline, color: Colors.white),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: profileImage.isNotEmpty
-                    ? Image.network(
-                        profileImage,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.person_outline,
-                            color: Colors.white,
-                          );
-                        },
-                      )
-                    : const Icon(Icons.person_outline, color: Colors.white),
               ),
 
               const SizedBox(width: 14),
@@ -684,43 +710,6 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
   }
 }
 
-class _StaticGlowBackground extends StatelessWidget {
-  const _StaticGlowBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            top: -80,
-            left: -90,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.22),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -120,
-            right: -80,
-            child: Container(
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.secondary.withValues(alpha: 0.18),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _FeaturedGlassHotelCard extends StatelessWidget {
   final String imageUrl;

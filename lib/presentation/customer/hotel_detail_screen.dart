@@ -271,14 +271,7 @@ class HotelDetailScreen extends StatelessWidget {
           ),
         ),
 
-        Positioned(
-          top: 18,
-          right: 18,
-          child: _circleButton(
-            icon: Icons.favorite_border_rounded,
-            onTap: () {},
-          ),
-        ),
+        
 
         Positioned(
           bottom: 22,

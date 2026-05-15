@@ -1,5 +1,4 @@
 import 'dart:ui';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -7,9 +6,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import 'booking_screen.dart';
+import 'hotel_detail_screen.dart';
+import 'single_hotel_map_screen.dart';
 
 class CustomerBookingsScreen extends StatefulWidget {
-  const CustomerBookingsScreen({super.key});
+  final VoidCallback? onBackToHome;
+
+  const CustomerBookingsScreen({
+    super.key,
+    this.onBackToHome,
+  });
 
   @override
   State<CustomerBookingsScreen> createState() => _CustomerBookingsScreenState();
@@ -18,11 +25,11 @@ class CustomerBookingsScreen extends StatefulWidget {
 class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
 
   String _selectedTab = 'All';
   String _searchQuery = '';
-  bool _showSearch = false;
+
+  Stream<QuerySnapshot>? _bookingsStream;
 
   final List<String> _tabs = [
     'All',
@@ -37,12 +44,12 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
   @override
   void initState() {
     super.initState();
+    _bookingsStream = _getBookingsStream();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -104,7 +111,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
 
     return docs.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
-
       final status = _normalizeStatus(data['status']);
 
       final matchesTab =
@@ -112,18 +118,13 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           status == selectedTab ||
           (selectedTab == 'accepted' && status == 'approved');
 
-      if (!matchesTab) {
-        return false;
-      }
+      if (!matchesTab) return false;
 
-      if (query.isEmpty) {
-        return true;
-      }
+      if (query.isEmpty) return true;
 
       final hotelName = (data['hotelName'] ?? '').toString().toLowerCase();
-      final customerName = (data['customerName'] ?? '')
-          .toString()
-          .toLowerCase();
+      final customerName =
+          (data['customerName'] ?? '').toString().toLowerCase();
       final totalPrice = (data['totalPrice'] ?? '').toString().toLowerCase();
       final totalNights = (data['totalNights'] ?? '').toString().toLowerCase();
       final bookingStatus = (data['status'] ?? '').toString().toLowerCase();
@@ -138,146 +139,127 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     }).toList();
   }
 
-  void _toggleSearch() {
-    setState(() {
-      _showSearch = !_showSearch;
-    });
-
-    if (_showSearch) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _searchFocusNode.requestFocus();
-        }
-      });
-    } else {
-      _searchController.clear();
-
-      setState(() {
-        _searchQuery = '';
-      });
-
-      FocusScope.of(context).unfocus();
-    }
-  }
-
   void _clearSearch() {
     _searchController.clear();
 
     setState(() {
       _searchQuery = '';
     });
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _searchFocusNode.requestFocus();
-      }
-    });
+  void _hideKeyboard() {
+    FocusScope.of(context).unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
-          ),
-
-          SafeArea(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _getBookingsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _buildLoadingState();
-                }
-
-                if (snapshot.hasError) {
-                  return _buildEmptyState(
-                    'Error loading bookings',
-                    'Please check your connection.',
-                    Icons.error_outline,
-                    showButton: false,
-                  );
-                }
-
-                final docs = snapshot.data?.docs ?? [];
-                final stats = _calculateStats(docs);
-                final filteredDocs = _filterBookings(docs);
-
-                return CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildAppBar()),
-
-                    if (_showSearch)
-                      SliverToBoxAdapter(child: _buildSearchBar()),
-
-                    if (docs.isNotEmpty)
-                      SliverToBoxAdapter(child: _buildSummaryCards(stats)),
-
-                    SliverToBoxAdapter(child: _buildTabs()),
-
-                    if (docs.isEmpty)
-                      SliverFillRemaining(
-                        child: _buildEmptyState(
-                          'No bookings yet',
-                          'Start exploring luxury hotels.',
-                          Icons.flight_takeoff,
-                        ),
-                      )
-                    else if (filteredDocs.isEmpty)
-                      SliverFillRemaining(
-                        child: _buildEmptyState(
-                          _searchQuery.isNotEmpty
-                              ? 'No matching bookings'
-                              : 'No $_selectedTab bookings',
-                          _searchQuery.isNotEmpty
-                              ? 'Try searching another hotel name, status, price, or booking ID.'
-                              : "You don't have any $_selectedTab reservations.",
-                          Icons.search_off,
-                          showButton: false,
-                        ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.only(
-                          bottom: 100,
-                          left: 20,
-                          right: 20,
-                        ),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final data =
-                                filteredDocs[index].data()
-                                    as Map<String, dynamic>;
-
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _PremiumBookingCard(
-                                bookingData: data,
-                                bookingId: filteredDocs[index].id,
-                              ),
-                            );
-                          }, childCount: filteredDocs.length),
-                        ),
-                      ),
-                  ],
-                );
-              },
+      body: GestureDetector(
+        onTap: _hideKeyboard,
+        behavior: HitTestBehavior.translucent,
+        child: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: AppColors.darkGradient,
+              ),
             ),
-          ),
-        ],
+            SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  _buildAppBar(),
+                  _buildSearchAndFilter(),
+                  Expanded(
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: _bookingsStream ?? _getBookingsStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return _buildLoadingState();
+                        }
+
+                        if (snapshot.hasError) {
+                          return _buildKeyboardSafeEmptyState(
+                            title: 'Error loading bookings',
+                            subtitle: 'Please check your connection.',
+                            icon: Icons.error_outline,
+                            showButton: false,
+                          );
+                        }
+
+                        final docs = snapshot.data?.docs ?? [];
+                        final stats = _calculateStats(docs);
+                        final filteredDocs = _filterBookings(docs);
+
+                        return ListView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          physics: const BouncingScrollPhysics(),
+                          padding: EdgeInsets.only(
+                            bottom: 120 +
+                                MediaQuery.of(context).viewInsets.bottom,
+                          ),
+                          children: [
+                            if (docs.isNotEmpty) _buildSummaryCards(stats),
+                            _buildTabs(),
+                            if (docs.isEmpty)
+                              _buildKeyboardSafeEmptyState(
+                                title: 'No bookings yet',
+                                subtitle: 'Start exploring luxury hotels.',
+                                icon: Icons.flight_takeoff,
+                              )
+                            else if (filteredDocs.isEmpty)
+                              _buildKeyboardSafeEmptyState(
+                                title: _searchQuery.isNotEmpty
+                                    ? 'No matching bookings'
+                                    : 'No $_selectedTab bookings',
+                                subtitle: _searchQuery.isNotEmpty
+                                    ? 'Try searching another hotel name, status, price, or booking ID.'
+                                    : "You don't have any $_selectedTab reservations.",
+                                icon: Icons.search_off,
+                                showButton: false,
+                              )
+                            else
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Column(
+                                  children: filteredDocs.map((doc) {
+                                    final data =
+                                        doc.data() as Map<String, dynamic>;
+
+                                    return Padding(
+                                      padding:
+                                          const EdgeInsets.only(bottom: 16),
+                                      child: _PremiumBookingCard(
+                                        bookingData: data,
+                                        bookingId: doc.id,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
       child: Row(
         children: [
           ClipRRect(
@@ -290,19 +272,27 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                   color: Colors.white,
                   size: 18,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  _hideKeyboard();
+
+                  if (widget.onBackToHome != null) {
+                    widget.onBackToHome!();
+                  } else if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
               ),
             ),
           ),
-
           const SizedBox(width: 14),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'My Bookings',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,
@@ -313,6 +303,8 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 const SizedBox(height: 4),
                 Text(
                   'Manage your hotel reservations',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
@@ -321,85 +313,69 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
               ],
             ),
           ),
-
-          GestureDetector(
-            onTap: _toggleSearch,
-            child: _circleGlassButton(
-              _showSearch ? Icons.close_rounded : Icons.search,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          _circleGlassButton(Icons.filter_list),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchAndFilter() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            height: 58,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: _glassSearchCard(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: TextField(
+          controller: _searchController,
+          style: const TextStyle(color: Colors.white),
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.search,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+          decoration: InputDecoration(
+            hintText: 'Search your bookings...',
+            hintStyle: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.search_rounded,
-                  color: Colors.white.withValues(alpha: 0.65),
-                ),
-
-                const SizedBox(width: 12),
-
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    style: const TextStyle(color: Colors.white),
-                    keyboardType: TextInputType.text,
-                    textInputAction: TextInputAction.search,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted && !_searchFocusNode.hasFocus) {
-                          _searchFocusNode.requestFocus();
-                        }
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Search hotel, status, price...',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.50),
-                      ),
-                      border: InputBorder.none,
-                    ),
-                  ),
-                ),
-
-                if (_searchQuery.isNotEmpty)
-                  GestureDetector(
-                    onTap: _clearSearch,
-                    child: Icon(
+            icon: Icon(
+              Icons.search,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(
                       Icons.close_rounded,
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: Colors.white54,
                     ),
-                  ),
-              ],
+                    onPressed: _clearSearch,
+                  )
+                : null,
+            border: InputBorder.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _glassSearchCard({
+    required Widget child,
+    required EdgeInsets padding,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
             ),
           ),
+          child: child,
         ),
       ),
     );
@@ -413,7 +389,11 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildStatCard('Total', stats['Total'] ?? 0, const Color(0xFF2196F3)),
+          _buildStatCard(
+            'Total',
+            stats['Total'] ?? 0,
+            const Color(0xFF2196F3),
+          ),
           _buildStatCard(
             'Pending',
             stats['Pending'] ?? 0,
@@ -487,6 +467,8 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
 
           return GestureDetector(
             onTap: () {
+              _hideKeyboard();
+
               setState(() {
                 _selectedTab = tab;
               });
@@ -535,45 +517,32 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     );
   }
 
-  Widget _circleGlassButton(IconData icon) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(50),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          height: 42,
-          width: 42,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-          ),
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(
-    String title,
-    String subtitle,
-    IconData icon, {
+  Widget _buildKeyboardSafeEmptyState({
+    required String title,
+    required String subtitle,
+    required IconData icon,
     bool showButton = true,
   }) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 26),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(26, 45, 26, 45),
+      child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 80, color: Colors.white.withValues(alpha: 0.2)),
-            const SizedBox(height: 20),
+            Icon(
+              icon,
+              size: 70,
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
+            const SizedBox(height: 18),
             Text(
               title,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: 21,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -583,14 +552,20 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 15,
+                fontSize: 14,
               ),
             ),
             if (showButton) ...[
-              const SizedBox(height: 32),
+              const SizedBox(height: 28),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  _hideKeyboard();
+
+                  if (widget.onBackToHome != null) {
+                    widget.onBackToHome!();
+                  } else if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
@@ -617,6 +592,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
 
   Widget _buildLoadingState() {
     return ListView.builder(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.fromLTRB(20, 100, 20, 20),
       itemCount: 4,
       itemBuilder: (context, index) {
@@ -649,6 +625,7 @@ class _PremiumBookingCard extends StatefulWidget {
 class _PremiumBookingCardState extends State<_PremiumBookingCard> {
   bool _isExpanded = false;
   bool _isCancelling = false;
+  bool _isOpening = false;
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
@@ -675,6 +652,134 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     }
 
     return value.toString();
+  }
+
+  String _getHotelId() {
+    return widget.bookingData['hotelId']?.toString() ??
+        widget.bookingData['hotel_id']?.toString() ??
+        '';
+  }
+
+  Map<String, dynamic> _buildFallbackHotelData() {
+    return {
+      'name': widget.bookingData['hotelName'] ?? 'Unknown Hotel',
+      'imageUrl': widget.bookingData['hotelImage'] ??
+          widget.bookingData['imageUrl'] ??
+          '',
+      'pricePerNight': widget.bookingData['pricePerNight'] ??
+          widget.bookingData['roomPrice'] ??
+          0,
+      'city': widget.bookingData['city'] ?? 'Unknown City',
+      'address': widget.bookingData['address'] ?? 'Address not available',
+      'latitude': widget.bookingData['latitude'],
+      'longitude': widget.bookingData['longitude'],
+      'ownerId': widget.bookingData['ownerId'],
+      'description':
+          widget.bookingData['description'] ?? 'No description available.',
+      'rating': widget.bookingData['rating'] ?? 0,
+      'amenities': widget.bookingData['amenities'],
+    };
+  }
+
+  Future<Map<String, dynamic>?> _loadHotelData() async {
+    final hotelId = _getHotelId();
+
+    if (hotelId.isEmpty) {
+      _showActionSnackBar('Hotel information is missing.');
+      return null;
+    }
+
+    setState(() {
+      _isOpening = true;
+    });
+
+    try {
+      final fallbackData = _buildFallbackHotelData();
+
+      final hotelDoc = await FirebaseFirestore.instance
+          .collection('hotels')
+          .doc(hotelId)
+          .get();
+
+      if (!hotelDoc.exists || hotelDoc.data() == null) {
+        return fallbackData;
+      }
+
+      return {
+        ...fallbackData,
+        ...hotelDoc.data()!,
+      };
+    } catch (e) {
+      _showActionSnackBar('Unable to load hotel details.');
+      return null;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isOpening = false;
+        });
+      }
+    }
+  }
+
+  void _showActionSnackBar(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _openBookingAgain() async {
+    final hotelId = _getHotelId();
+    final hotelData = await _loadHotelData();
+
+    if (!mounted || hotelData == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookingScreen(
+          hotelId: hotelId,
+          hotel: hotelData,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openDirections() async {
+    final hotelData = await _loadHotelData();
+
+    if (!mounted || hotelData == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SingleHotelMapScreen(
+          hotel: hotelData,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openHotelDetails() async {
+    final hotelId = _getHotelId();
+    final hotelData = await _loadHotelData();
+
+    if (!mounted || hotelData == null) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HotelDetailScreen(
+          hotelId: hotelId,
+          hotel: hotelData,
+        ),
+      ),
+    );
   }
 
   Future<void> _cancelBooking() async {
@@ -728,9 +833,9 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           .collection('bookings')
           .doc(widget.bookingId)
           .update({
-            'status': 'cancelled',
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+        'status': 'cancelled',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
       if (!mounted) return;
 
@@ -768,7 +873,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
+      child: const Icon(
+        Icons.hotel,
+        color: Colors.white54,
+        size: 32,
+      ),
     );
   }
 
@@ -792,6 +901,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
 
     return GestureDetector(
       onTap: () {
+        FocusScope.of(context).unfocus();
+
         setState(() {
           _isExpanded = !_isExpanded;
         });
@@ -833,9 +944,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                               )
                             : _buildImagePlaceholder(),
                       ),
-
                       const SizedBox(width: 16),
-
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -854,9 +963,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-
                                 const SizedBox(width: 8),
-
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
@@ -881,9 +988,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 8),
-
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
@@ -894,9 +999,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 8),
-
                             Text(
                               'Rs. ${price.toInt()} • $nights night(s)',
                               style: const TextStyle(
@@ -911,9 +1014,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                     ],
                   ),
                 ),
-
                 AnimatedCrossFade(
-                  firstChild: const SizedBox(width: double.infinity, height: 0),
+                  firstChild: const SizedBox(
+                    width: double.infinity,
+                    height: 0,
+                  ),
                   secondChild: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Column(
@@ -978,6 +1083,30 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
   }
 
   Widget _buildActionButtons(String status) {
+    if (_isOpening) {
+      return SizedBox(
+        height: 42,
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: null,
+          style: ElevatedButton.styleFrom(
+            disabledBackgroundColor: Colors.white.withValues(alpha: 0.10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(
+              color: AppColors.accent,
+              strokeWidth: 2,
+            ),
+          ),
+        ),
+      );
+    }
+
     if (status == 'pending') {
       return SizedBox(
         width: double.infinity,
@@ -1009,9 +1138,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: _openDirections,
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                side: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.3),
+                ),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1027,7 +1158,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: _openHotelDetails,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 foregroundColor: AppColors.backgroundDark1,
@@ -1049,7 +1180,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: _openBookingAgain,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white.withValues(alpha: 0.1),
             foregroundColor: Colors.white,

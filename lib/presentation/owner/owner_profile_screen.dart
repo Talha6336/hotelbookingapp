@@ -12,7 +12,10 @@ import '../customer/edit_profile_screen.dart';
 
 
 class OwnerProfileScreen extends StatelessWidget {
-  const OwnerProfileScreen({super.key});
+  final VoidCallback onBackToHome;
+  final VoidCallback? onOpenBookings;
+  final VoidCallback? onMyHotels;
+  const OwnerProfileScreen({super.key, required this.onBackToHome, this.onOpenBookings, this.onMyHotels});
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -208,7 +211,13 @@ class OwnerProfileScreen extends StatelessWidget {
       children: [
         _circleGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
-          onTap: () => Navigator.pop(context),
+          onTap: () {
+            if(this.onBackToHome!=null){
+              this.onBackToHome();
+            }else if(Navigator.canPop(context)){
+              Navigator.pop(context);
+            }
+          },
         ),
         const Spacer(),
         _circleGlassButton(
@@ -481,8 +490,17 @@ class OwnerProfileScreen extends StatelessWidget {
             title: 'My Hotels',
             subtitle: 'View and manage your hotels',
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerHotelsScreen()));
-            },
+            if (onMyHotels != null) {
+              onMyHotels!();
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OwnerBookingsScreen(),
+                ),
+              );
+            }
+          },
           ),
           _divider(),
           _actionTile(
@@ -490,9 +508,18 @@ class OwnerProfileScreen extends StatelessWidget {
             title: 'Booking Requests',
             subtitle: 'Accept or reject booking requests',
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerBookingsScreen()));
-            },
-          ),
+            if (onOpenBookings != null) {
+              onOpenBookings!();
+            } else {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OwnerBookingsScreen(),
+                ),
+              );
+            }
+          },
+        ),
           _divider(),
           _actionTile(
             icon: Icons.logout_rounded,

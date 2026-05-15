@@ -10,7 +10,14 @@ import '../widgets/app_background.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback? onBackToHome;
+  final VoidCallback? onOpenBookings;
+
+  const ProfileScreen({
+    super.key,
+    this.onBackToHome,
+    this.onOpenBookings,
+  });
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -186,7 +193,13 @@ class ProfileScreen extends StatelessWidget {
       children: [
         _circleGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
-          onTap: () => Navigator.pop(context),
+          onTap: () {
+            if (onBackToHome != null) {
+              onBackToHome!();
+            } else if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
         ),
         const Spacer(),
         _circleGlassButton(
@@ -430,12 +443,16 @@ class ProfileScreen extends StatelessWidget {
             title: 'My Bookings',
             subtitle: 'View booking status',
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CustomerBookingsScreen(),
-                ),
-              );
+              if (onOpenBookings != null) {
+                onOpenBookings!();
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CustomerBookingsScreen(),
+                  ),
+                );
+              }
             },
           ),
           _divider(),
@@ -443,14 +460,7 @@ class ProfileScreen extends StatelessWidget {
             icon: Icons.help_outline_rounded,
             title: 'Help & Support',
             subtitle: 'Contact hotel booking support',
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Support feature will be added later'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
+            onTap: () => _showSupportDialog(context),
           ),
           _divider(),
           _actionTile(
@@ -683,6 +693,101 @@ class ProfileScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _showSupportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.backgroundDark1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.support_agent_rounded,
+                color: AppColors.accent,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Help & Support',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'For support, please contact the developers:',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.72),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _developerRow('Muhammad Talha'),
+              const SizedBox(height: 12),
+              _developerRow('Muhammad Zain Ul Abidin'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _developerRow(String name) {
+    return Row(
+      children: [
+        Container(
+          height: 38,
+          width: 38,
+          decoration: BoxDecoration(
+            color: AppColors.accent.withValues(alpha: 0.14),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.accent.withValues(alpha: 0.35),
+            ),
+          ),
+          child: const Icon(
+            Icons.code_rounded,
+            color: AppColors.accent,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -11,7 +11,8 @@ import '../widgets/app_background.dart';
 import 'hotel_detail_screen.dart';
 
 class HotelsMapScreen extends StatefulWidget {
-  const HotelsMapScreen({super.key});
+  final VoidCallback onBackToHome;
+  const HotelsMapScreen({super.key, required this.onBackToHome});
 
   @override
   State<HotelsMapScreen> createState() => _HotelsMapScreenState();
@@ -472,23 +473,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                             ),
                           ),
 
-                        Positioned(
-                          right: 16,
-                          bottom: 16,
-                          child: Column(
-                            children: [
-                              _mapButton(
-                                icon: Icons.refresh_rounded,
-                                onTap: _loadHotels,
-                              ),
-                              const SizedBox(height: 10),
-                              _mapButton(
-                                icon: Icons.fit_screen_rounded,
-                                onTap: _fitAllHotels,
-                              ),
-                            ],
-                          ),
-                        ),
+                        
                       ],
                     ),
                   ),
@@ -506,7 +491,13 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
       children: [
         _circleGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
-          onTap: () => Navigator.pop(context),
+          onTap: () {
+            if (widget.onBackToHome!=null){
+              widget.onBackToHome!();
+            }else if(Navigator.canPop(context)){
+              Navigator.pop(context);
+            }
+          },
         ),
 
         const SizedBox(width: 14),

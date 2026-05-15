@@ -150,9 +150,35 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             index: _bottomNavIndex,
             children: [
               _buildDashboardTab(), // Index 0
-              const OwnerHotelsScreen(), // Index 1
-              const OwnerBookingsScreen(), // Index 2
-              const OwnerProfileScreen(), // Index 3
+              OwnerHotelsScreen(
+                onBackToHome: (){
+                setState(() {
+                  _bottomNavIndex=0;
+                });
+              },
+              ), // Index 1
+               OwnerBookingsScreen(onBackToHome: (){
+                setState(() {
+                  _bottomNavIndex=0;
+                });
+              },
+
+              ), // Index 2
+              OwnerProfileScreen(onBackToHome: (){
+                setState(() {
+                  _bottomNavIndex=0;
+                });
+              },
+              onOpenBookings: (){
+                setState(() {
+                  _bottomNavIndex=2;
+                });
+              },
+              onMyHotels: (){
+                setState(() {
+                  _bottomNavIndex=1;
+                });
+              }), // Index 3
             ],
           ),
 
@@ -354,15 +380,23 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
                 children: [
                   const NotificationButton(),
                   const SizedBox(width: 12),
-                  CircleAvatar(
-                    radius: 22,
-                    backgroundColor: Colors.white.withValues(alpha: 0.12),
-                    backgroundImage: profileImage.isNotEmpty
-                        ? NetworkImage(profileImage)
-                        : null,
-                    child: profileImage.isEmpty
-                        ? const Icon(Icons.person_rounded, color: Colors.white)
-                        : null,
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _bottomNavIndex=3;
+                      });
+                    },
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.white.withValues(alpha: 0.12),
+                      backgroundImage: profileImage.isNotEmpty
+                          ? NetworkImage(profileImage)
+                          : null,
+                      child: profileImage.isEmpty
+                          ? const Icon(Icons.person_rounded, color: Colors.white)
+                          : null,
+                      
+                    ),
                   ),
                 ],
               ),

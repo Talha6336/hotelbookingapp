@@ -9,7 +9,8 @@ import 'add_hotel_screen.dart';
 import 'edit_hotel_screen.dart';
 
 class OwnerHotelsScreen extends StatefulWidget {
-  const OwnerHotelsScreen({super.key});
+  final VoidCallback? onBackToHome;
+  const OwnerHotelsScreen({super.key, this.onBackToHome});
 
   @override
   State<OwnerHotelsScreen> createState() => _OwnerHotelsScreenState();
@@ -223,7 +224,8 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
+        spacing: 5,
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(50),
@@ -235,7 +237,13 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                   color: Colors.white,
                   size: 18,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  if (widget.onBackToHome!=null){
+                    widget.onBackToHome!();
+                  }else if(Navigator.canPop(context)){
+                    Navigator.pop(context);
+                  }
+                },
               ),
             ),
           ),
@@ -258,7 +266,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
               ),
             ],
           ),
-          _glassIconButton(Icons.notifications_none_rounded, showBadge: true),
+          
         ],
       ),
     );
@@ -311,8 +319,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          _glassIconButton(Icons.tune_rounded),
+          
         ],
       ),
     );
