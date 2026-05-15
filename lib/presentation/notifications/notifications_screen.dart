@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 import 'notification_model.dart';
 import 'notification_service.dart';
 
@@ -26,11 +27,11 @@ class NotificationsScreen extends StatelessWidget {
       case 'booking_pending':
         return Colors.orange;
       case 'booking_approved':
-        return Colors.greenAccent;
+        return Colors.green;
       case 'booking_rejected':
         return Colors.redAccent;
       default:
-        return AppColors.accent;
+        return AppColors.primary;
     }
   }
 
@@ -52,77 +53,73 @@ class NotificationsScreen extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     if (uid == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.backgroundDark1,
-        body: Center(
-          child: Text(
-            'Please login first',
-            style: TextStyle(color: Colors.white),
+      return Scaffold(
+        body: AppBackground(
+          child: Center(
+            child: Text(
+              'Please login first',
+              style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
+            ),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark1,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.darkGradient,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context, uid),
+      body: AppBackground(
+        useSafeArea: true,
+        child: Column(
+          children: [
+            _buildHeader(context, uid),
 
-              Expanded(
-                child: StreamBuilder<List<AppNotification>>(
-                  stream: NotificationService.getUserNotifications(
-                    userId: uid,
-                  ),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.accent,
-                        ),
-                      );
-                    }
+            Expanded(
+              child: StreamBuilder<List<AppNotification>>(
+                stream: NotificationService.getUserNotifications(
+                  userId: uid,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
+                  }
 
-                    if (snapshot.hasError) {
+                  if (snapshot.hasError) {
                     return Center(
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Text(
                           'Unable to load notifications\n${snapshot.error}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70),
+                          style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
                         ),
                       ),
                     );
-}
+                  }
 
-                    final notifications = snapshot.data ?? [];
+                  final notifications = snapshot.data ?? [];
 
-                    if (notifications.isEmpty) {
-                      return _buildEmptyState();
-                    }
+                  if (notifications.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
 
-                    return ListView.separated(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      itemCount: notifications.length,
-                      separatorBuilder: (context, index) {
-                        return const SizedBox(height: 12);
-                      },
-                      itemBuilder: (context, index) {
-                        return _buildNotificationCard(notifications[index]);
-                      },
-                    );
-                  },
-                ),
+                  return ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    itemCount: notifications.length,
+                    separatorBuilder: (context, index) {
+                      return const SizedBox(height: 12);
+                    },
+                    itemBuilder: (context, index) {
+                      return _buildNotificationCard(context, notifications[index]);
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -142,15 +139,21 @@ class NotificationsScreen extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: AppColors.adaptiveSurface(context),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.22),
+                  color: AppColors.adaptiveBorder(context),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.adaptiveShadow(context),
+                    blurRadius: 10,
+                  )
+                ]
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: AppColors.adaptiveTextPrimary(context),
                 size: 18,
               ),
             ),
@@ -158,11 +161,11 @@ class NotificationsScreen extends StatelessWidget {
 
           const SizedBox(width: 14),
 
-          const Expanded(
+          Expanded(
             child: Text(
               'Notifications',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.adaptiveTextPrimary(context),
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
               ),
@@ -176,7 +179,7 @@ class NotificationsScreen extends StatelessWidget {
             child: const Text(
               'Mark all',
               style: TextStyle(
-                color: AppColors.accent,
+                color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -186,18 +189,24 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Container(
           padding: const EdgeInsets.all(26),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
+              color: AppColors.adaptiveBorder(context),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.adaptiveShadow(context),
+                blurRadius: 20,
+              )
+            ]
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -205,13 +214,13 @@ class NotificationsScreen extends StatelessWidget {
               const Icon(
                 Icons.notifications_none_rounded,
                 size: 74,
-                color: AppColors.accent,
+                color: AppColors.primary,
               ),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'No notifications yet',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -220,7 +229,7 @@ class NotificationsScreen extends StatelessWidget {
               Text(
                 'Booking updates will appear here.',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.70),
+                  color: AppColors.adaptiveTextSecondary(context),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -231,7 +240,7 @@ class NotificationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationCard(AppNotification notification) {
+  Widget _buildNotificationCard(BuildContext context, AppNotification notification) {
     final color = _getColor(notification.type);
     final icon = _getIcon(notification.type);
 
@@ -246,14 +255,17 @@ class NotificationsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: notification.isRead
-              ? Colors.white.withValues(alpha: 0.08)
-              : AppColors.accent.withValues(alpha: 0.18),
+              ? AppColors.adaptiveSurface(context)
+              : AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: notification.isRead
-                ? Colors.white.withValues(alpha: 0.12)
-                : AppColors.accent.withValues(alpha: 0.45),
+                ? AppColors.adaptiveBorder(context)
+                : AppColors.primary.withValues(alpha: 0.3),
           ),
+          boxShadow: notification.isRead 
+            ? [BoxShadow(color: AppColors.adaptiveShadow(context), blurRadius: 10, offset: const Offset(0, 4))] 
+            : [],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +274,7 @@ class NotificationsScreen extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.18),
+                color: color.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -281,7 +293,7 @@ class NotificationsScreen extends StatelessWidget {
                   Text(
                     notification.title,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.adaptiveTextPrimary(context),
                       fontSize: 15,
                       fontWeight: notification.isRead
                           ? FontWeight.w600
@@ -292,7 +304,7 @@ class NotificationsScreen extends StatelessWidget {
                   Text(
                     notification.message,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.70),
+                      color: AppColors.adaptiveTextSecondary(context),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -301,7 +313,7 @@ class NotificationsScreen extends StatelessWidget {
                   Text(
                     _formatDate(notification.createdAt),
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: AppColors.adaptiveTextTertiary(context),
                       fontSize: 12,
                     ),
                   ),
@@ -314,7 +326,7 @@ class NotificationsScreen extends StatelessWidget {
                 height: 9,
                 width: 9,
                 decoration: const BoxDecoration(
-                  color: AppColors.accent,
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
               ),

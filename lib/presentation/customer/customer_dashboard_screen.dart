@@ -290,46 +290,45 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
   // UPDATED BOTTOM NAVIGATION BAR
   // =========================================================================
   Widget _buildFloatingNavBar() {
-    final bool isMapTab = _bottomNavIndex == 1;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          height: 70,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: isMapTab
-                ? AppColors.backgroundDark1.withValues(alpha: 0.95)
-                : AppColors.adaptiveSurface(context).withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: isMapTab
-                  ? AppColors.adaptiveBorder(context)
-                  : AppColors.adaptiveBorder(context),
-              width: 1.5,
-            ),
-            boxShadow: isMapTab
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 15,
-                      offset: const Offset(0, 5),
-                    ),
-                  ]
-                : [],
+    return Container(
+      // We put the shadow outside the ClipRRect so it actually casts onto the map!
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.adaptiveShadow(context),
+            blurRadius: 25,
+            spreadRadius: 2, // Gives it a nice lift off the map
+            offset: const Offset(0, 8),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // THE FIX: Changed to home_outlined so it matches the other icons perfectly!
-              _buildNavItem(0, Icons.home_outlined, 'Home'),
-              _buildNavItem(1, Icons.map_outlined, 'Map'),
-              _buildNavItem(2, Icons.bookmark_border_rounded, 'Bookings'),
-              _buildNavItem(3, Icons.person_outline_rounded, 'Profile'),
-            ],
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: 70,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              // Always use the adaptive surface color, just slightly transparent
+              color: AppColors.adaptiveSurface(context).withValues(alpha: 0.90),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: AppColors.adaptiveBorder(context),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildNavItem(0, Icons.home_outlined, 'Home'),
+                _buildNavItem(1, Icons.map_outlined, 'Map'),
+                _buildNavItem(2, Icons.bookmark_border_rounded, 'Bookings'),
+                _buildNavItem(3, Icons.person_outline_rounded, 'Profile'),
+              ],
+            ),
           ),
         ),
       ),

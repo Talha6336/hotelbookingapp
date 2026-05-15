@@ -3,16 +3,19 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hotelbookingapp/presentation/owner/owner_bookings_screen.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../widgets/app_background.dart';
 import '../customer/edit_profile_screen.dart';
+import 'owner_bookings_screen.dart';
 
 class OwnerProfileScreen extends StatelessWidget {
   final VoidCallback onBackToHome;
   final VoidCallback? onOpenBookings;
   final VoidCallback? onMyHotels;
+
   const OwnerProfileScreen({
     super.key,
     required this.onBackToHome,
@@ -96,7 +99,8 @@ class OwnerProfileScreen extends StatelessWidget {
               ? _buildLoginRequired(context)
               : SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 30),
+                  // THE FIX: Increased bottom padding to 130 to clear the floating bottom navigation bar
+                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 130),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -153,18 +157,13 @@ class OwnerProfileScreen extends StatelessWidget {
                           }
 
                           final userData = snapshot.data?.data() ?? {};
-
                           final String name = userData['name'] ?? 'Hotel Owner';
-
                           final String email =
                               userData['email'] ??
                               currentUser.email ??
                               'No email';
-
                           final String phone = userData['phone'] ?? 'Not added';
-
                           final String role = userData['role'] ?? 'owner';
-
                           final String? profileImage = userData['profileImage'];
 
                           return Column(
@@ -270,7 +269,11 @@ class OwnerProfileScreen extends StatelessWidget {
               ],
             ),
             child: profileImage == null || profileImage.isEmpty
-                ? Icon(Icons.person_rounded, color: Colors.white, size: 46)
+                ? const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 46,
+                  )
                 : null,
           ),
 
@@ -310,7 +313,7 @@ class OwnerProfileScreen extends StatelessWidget {
             ),
             child: Text(
               role.toUpperCase(),
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.accent,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -481,6 +484,13 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _buildActionCard(BuildContext context) {
+    // Detect if the app is currently in dark mode to update the switch
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final bool isDarkMode =
+        themeProvider.themeMode == ThemeMode.dark ||
+        (themeProvider.themeMode == ThemeMode.system &&
+            Theme.of(context).brightness == Brightness.dark);
+
     return _glassCard(
       child: Column(
         children: [
@@ -496,7 +506,7 @@ class OwnerProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => OwnerBookingsScreen(),
+                    builder: (context) => const OwnerBookingsScreen(),
                   ),
                 );
               }
@@ -515,17 +525,33 @@ class OwnerProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => OwnerBookingsScreen(),
+                    builder: (context) => const OwnerBookingsScreen(),
                   ),
                 );
               }
             },
           ),
-<<<<<<< Updated upstream
-          _divider(),
-=======
           _divider(context),
->>>>>>> Stashed changes
+
+          // NEW: Dark Mode Toggle
+          _actionTile(
+            context: context,
+            icon: Icons.dark_mode_outlined,
+            title: 'Dark Mode',
+            subtitle: 'Toggle app visual theme',
+            trailing: Switch(
+              value: isDarkMode,
+              activeColor: AppColors.primary,
+              onChanged: (value) {
+                themeProvider.toggleTheme(value);
+              },
+            ),
+            onTap: () {
+              themeProvider.toggleTheme(!isDarkMode);
+            },
+          ),
+
+          _divider(context),
           _actionTile(
             context: context,
             icon: Icons.logout_rounded,
@@ -576,6 +602,7 @@ class OwnerProfileScreen extends StatelessWidget {
     );
   }
 
+  // Modified to accept an optional 'trailing' widget for the Switch
   Widget _actionTile({
     required BuildContext context,
     required IconData icon,
@@ -583,6 +610,7 @@ class OwnerProfileScreen extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
     bool isDanger = false,
+    Widget? trailing,
   }) {
     final color = isDanger ? Colors.redAccent : AppColors.accent;
 
@@ -632,11 +660,12 @@ class OwnerProfileScreen extends StatelessWidget {
               ),
             ),
 
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: AppColors.adaptiveTextTertiary(context),
-              size: 16,
-            ),
+            trailing ??
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.adaptiveTextTertiary(context),
+                  size: 16,
+                ),
           ],
         ),
       ),
@@ -660,18 +689,13 @@ class OwnerProfileScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.adaptiveSurface(context),
               shape: BoxShape.circle,
-<<<<<<< Updated upstream
-              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-=======
               border: Border.all(color: AppColors.adaptiveBorder(context)),
             ),
             child: Icon(
               icon,
               color: AppColors.adaptiveTextPrimary(context),
               size: 20,
->>>>>>> Stashed changes
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),
@@ -682,47 +706,45 @@ class OwnerProfileScreen extends StatelessWidget {
     required Widget child,
     EdgeInsets padding = const EdgeInsets.all(18),
   }) {
-<<<<<<< Updated upstream
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          width: double.infinity,
-          padding: padding,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
-=======
-    return Builder(
-      builder: (context) => ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            width: double.infinity,
-            padding: padding,
-            decoration: BoxDecoration(
-              color: AppColors.adaptiveSurface(context),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.adaptiveBorder(context)),
-            ),
-            child: child,
->>>>>>> Stashed changes
-          ),
+        child: Builder(
+          builder: (context) {
+            return Container(
+              width: double.infinity,
+              padding: padding,
+              decoration: BoxDecoration(
+                color: AppColors.adaptiveSurface(context),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.adaptiveBorder(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.adaptiveShadow(context),
+                    blurRadius: AppColors.isDark(context) ? 22 : 30,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
+              ),
+              child: child,
+            );
+          },
         ),
       ),
     );
   }
 
-<<<<<<< Updated upstream
-  Widget _divider() {
-    return Divider(color: Colors.white.withValues(alpha: 0.12), height: 1);
-=======
-  Widget _divider(BuildContext context) {
-    return Divider(color: AppColors.adaptiveBorder(context), height: 1);
->>>>>>> Stashed changes
+  Widget _divider([BuildContext? context]) {
+    return Builder(
+      builder: (builderContext) {
+        final resolvedContext = context ?? builderContext;
+        return Divider(
+          color: AppColors.adaptiveBorder(resolvedContext),
+          height: 1,
+        );
+      },
+    );
   }
 
   Widget _buildLoginRequired(BuildContext context) {
@@ -733,7 +755,11 @@ class OwnerProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.login_rounded, color: AppColors.accent, size: 70),
+              const Icon(
+                Icons.login_rounded,
+                color: AppColors.accent,
+                size: 70,
+              ),
               const SizedBox(height: 18),
               Text(
                 'Login Required',
@@ -747,13 +773,9 @@ class OwnerProfileScreen extends StatelessWidget {
               Text(
                 'Please login to view your owner profile.',
                 textAlign: TextAlign.center,
-<<<<<<< Updated upstream
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
-=======
                 style: TextStyle(
                   color: AppColors.adaptiveTextSecondary(context),
                 ),
->>>>>>> Stashed changes
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -768,7 +790,7 @@ class OwnerProfileScreen extends StatelessWidget {
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.adaptiveTextPrimary(context),
                 ),
-                child: Text('Go to Login'),
+                child: const Text('Go to Login'),
               ),
             ],
           ),
@@ -788,13 +810,6 @@ class OwnerProfileScreen extends StatelessWidget {
           ),
           title: Text(
             'Logout',
-<<<<<<< Updated upstream
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          content: Text(
-            'Are you sure you want to logout?',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.72)),
-=======
             style: TextStyle(
               color: AppColors.adaptiveTextPrimary(context),
               fontWeight: FontWeight.bold,
@@ -803,7 +818,6 @@ class OwnerProfileScreen extends StatelessWidget {
           content: Text(
             'Are you sure you want to logout?',
             style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
->>>>>>> Stashed changes
           ),
           actions: [
             TextButton(
@@ -812,13 +826,9 @@ class OwnerProfileScreen extends StatelessWidget {
               },
               child: Text(
                 'Cancel',
-<<<<<<< Updated upstream
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
-=======
                 style: TextStyle(
                   color: AppColors.adaptiveTextSecondary(context),
                 ),
->>>>>>> Stashed changes
               ),
             ),
             TextButton(
@@ -826,7 +836,7 @@ class OwnerProfileScreen extends StatelessWidget {
                 Navigator.pop(dialogContext);
                 _logout(context);
               },
-              child: Text(
+              child: const Text(
                 'Logout',
                 style: TextStyle(
                   color: Colors.redAccent,

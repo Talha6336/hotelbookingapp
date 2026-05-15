@@ -4,11 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-class AppColors {
-  static const Color primary = Color(0xFF3F51B5);
-  static const Color secondary = Color(0xFF7E57C2);
-  static const Color accent = Color(0xFFFFC107);
-}
+import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -117,48 +114,52 @@ class _LoginScreenState extends State<LoginScreen>
       barrierDismissible: false, // Forces them to make a choice
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1A237E), // Match your dark theme
+          backgroundColor: AppColors.adaptiveSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: AppColors.adaptiveBorder(context)),
           ),
-          title: const Text(
+          title: Text(
             "Welcome to StayEase!",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          content: const Text(
+          content: Text(
             "To complete your profile, please tell us how you will be using the app:",
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
           ),
           actionsAlignment: MainAxisAlignment.spaceEvenly,
           actions: [
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(context, 'customer'),
-              icon: const Icon(Icons.luggage, color: Colors.white, size: 18),
-              label: const Text(
+              icon: Icon(
+                Icons.luggage,
+                color: AppColors.adaptiveTextPrimary(context),
+                size: 18,
+              ),
+              label: Text(
                 "Book Hotels",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.1),
+                backgroundColor: AppColors.adaptiveSurfaceMuted(context),
                 elevation: 0,
               ),
             ),
             ElevatedButton.icon(
               onPressed: () => Navigator.pop(context, 'owner'),
-              icon: const Icon(
-                Icons.domain,
-                color: Color(0xFF1A237E),
-                size: 18,
-              ),
+              icon: const Icon(Icons.domain, color: Colors.white, size: 18),
               label: const Text(
                 "List Hotels",
                 style: TextStyle(
-                  color: Color(0xFF1A237E),
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFC107), // AppColors.accent
+                backgroundColor: AppColors.primary,
               ),
             ),
           ],
@@ -167,7 +168,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // --- UPDATED: Google Sign-In Logic ---
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
 
@@ -199,13 +199,10 @@ class _LoginScreenState extends State<LoginScreen>
 
         String role;
 
-        // --- NEW LOGIC: Check if New or Existing User ---
         if (!docSnapshot.exists) {
-          // New User! Stop and ask for their role using our dialog
           final selectedRole = await _showRoleSelectionDialog();
 
           if (selectedRole == null) {
-            // If something went wrong and they didn't pick, cancel signup
             await user.delete();
             setState(() => _isLoading = false);
             return;
@@ -213,7 +210,6 @@ class _LoginScreenState extends State<LoginScreen>
 
           role = selectedRole;
 
-          // Save the brand new Google user to Firestore with their chosen role
           await userDocRef.set({
             'uid': user.uid,
             'name': user.displayName ?? 'Google User',
@@ -222,13 +218,11 @@ class _LoginScreenState extends State<LoginScreen>
             'createdAt': FieldValue.serverTimestamp(),
           });
         } else {
-          // Existing user! Just grab their role from the database
           role = docSnapshot.data()?['role'] ?? 'customer';
         }
 
         if (!mounted) return;
 
-        // Finally, navigate them to the correct dashboard!
         if (role == 'owner') {
           Navigator.of(context).pushReplacementNamed('/owner_nav');
         } else {
@@ -237,12 +231,11 @@ class _LoginScreenState extends State<LoginScreen>
       }
     } on FirebaseAuthException catch (e) {
       _showErrorSnackBar(e.message ?? "Google Sign-In failed.");
-   } catch (e, stackTrace) {
-  debugPrint("Google Sign-In Error: $e");
-  debugPrint("StackTrace: $stackTrace");
-
-  _showErrorSnackBar("Google Sign-In Error: $e");
-} finally {
+    } catch (e, stackTrace) {
+      debugPrint("Google Sign-In Error: $e");
+      debugPrint("StackTrace: $stackTrace");
+      _showErrorSnackBar("Google Sign-In Error: $e");
+    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -261,58 +254,36 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/images/hotel_bg.jpg', fit: BoxFit.cover),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF1A237E).withValues(alpha: 0.4),
-                    const Color(0xFF1A237E).withValues(alpha: 0.9),
-                    const Color(0xFF000000).withValues(alpha: 0.95),
+      body: AppBackground(
+        useSafeArea: true,
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 20.0,
+            ),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 40),
+                    _buildGlassmorphismCard(),
+                    const SizedBox(height: 32),
+                    _buildGoogleSignInButton(),
+                    const SizedBox(height: 24),
+                    _buildSignUpText(),
                   ],
-                  stops: const [0.0, 0.5, 1.0],
                 ),
               ),
             ),
           ),
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20.0,
-                ),
-                child: FadeTransition(
-                  opacity: _fadeAnim,
-                  child: SlideTransition(
-                    position: _slideAnim,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildHeader(),
-                        const SizedBox(height: 40),
-                        _buildGlassmorphismCard(),
-                        const SizedBox(height: 32),
-                        _buildGoogleSignInButton(),
-                        const SizedBox(height: 24),
-                        _buildSignUpText(),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -321,12 +292,12 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Discover\nLuxury Hotels",
+        Text(
+          "Welcome to\nStayEase",
           style: TextStyle(
             fontSize: 38,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: AppColors.adaptiveTextPrimary(context),
             height: 1.1,
             letterSpacing: -0.5,
           ),
@@ -337,7 +308,7 @@ class _LoginScreenState extends State<LoginScreen>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppColors.adaptiveTextSecondary(context),
           ),
         ),
       ],
@@ -352,15 +323,15 @@ class _LoginScreenState extends State<LoginScreen>
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: AppColors.adaptiveBorder(context),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: AppColors.adaptiveShadow(context),
                 blurRadius: 30,
                 spreadRadius: -5,
               ),
@@ -393,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen>
                 child: const Text(
                   "Forgot Password?",
                   style: TextStyle(
-                    color: AppColors.accent,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -419,18 +390,18 @@ class _LoginScreenState extends State<LoginScreen>
       controller: controller,
       obscureText: isPassword && !_isPasswordVisible,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-        prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
+        hintStyle: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
+        prefixIcon: Icon(icon, color: AppColors.adaptiveTextSecondary(context)),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   _isPasswordVisible
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: AppColors.adaptiveTextSecondary(context),
                 ),
                 onPressed: () {
                   setState(() {
@@ -440,18 +411,18 @@ class _LoginScreenState extends State<LoginScreen>
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
+        fillColor: AppColors.adaptiveSurfaceMuted(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppColors.adaptiveBorder(context)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: AppColors.adaptiveBorder(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
       ),
@@ -462,64 +433,46 @@ class _LoginScreenState extends State<LoginScreen>
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.secondary],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleLogin,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+          elevation: 5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
-        child: ElevatedButton(
-          onPressed: _isLoading ? null : _handleLogin,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            disabledBackgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
-                )
-              : const Text(
-                  "Login",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
                 ),
-        ),
+              )
+            : const Text(
+                "Login",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }
 
   Widget _buildGoogleSignInButton() {
     return OutlinedButton.icon(
-      // --- NEW: Connected the logic here ---
       onPressed: _isLoading ? null : _signInWithGoogle,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
+        side: BorderSide(color: AppColors.adaptiveBorder(context), width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: Colors.white.withValues(alpha: 0.05),
+        backgroundColor: AppColors.adaptiveSurfaceMuted(context),
       ),
       icon: Container(
         padding: const EdgeInsets.all(4),
@@ -529,12 +482,12 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         child: const Icon(Icons.g_mobiledata, color: Colors.black, size: 24),
       ),
-      label: const Text(
+      label: Text(
         "Continue with Google",
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: AppColors.adaptiveTextPrimary(context),
         ),
       ),
     );
@@ -546,7 +499,10 @@ class _LoginScreenState extends State<LoginScreen>
       children: [
         Text(
           "Don't have an account? ",
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+          style: TextStyle(
+            color: AppColors.adaptiveTextSecondary(context),
+            fontSize: 14,
+          ),
         ),
         GestureDetector(
           onTap: () {
@@ -555,7 +511,7 @@ class _LoginScreenState extends State<LoginScreen>
           child: const Text(
             "Sign Up",
             style: TextStyle(
-              color: AppColors.accent,
+              color: AppColors.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),

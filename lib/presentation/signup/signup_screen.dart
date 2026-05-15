@@ -1,17 +1,10 @@
 import 'dart:ui';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Using the same AppColors for consistency
-class AppColors {
-  static const Color primary = Color(0xFF3F51B5);
-  static const Color secondary = Color(0xFF7E57C2);
-  static const Color accent = Color(0xFFFFC107);
-  static const Color bgTop = Color(0xFF1A237E);
-  static const Color bgBottom = Color(0xFF311B92);
-}
+import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -38,7 +31,6 @@ class _SignupScreenState extends State<SignupScreen>
 
   // Animations
   late AnimationController _entryController;
-
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
@@ -49,8 +41,6 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   void _setupAnimations() {
-    // Background floating animation
-
     // Entry staggered animations
     _entryController = AnimationController(
       vsync: this,
@@ -156,50 +146,33 @@ class _SignupScreenState extends State<SignupScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // 1. Luxury Gradient Background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.bgTop, AppColors.bgBottom],
-              ),
+      body: AppBackground(
+        useSafeArea: true,
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 20.0,
             ),
-          ),
-
-          // 2. Animated Floating Glassmorphism Circles
-
-          // 3. Scrollable Main Content
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 20.0,
-                ),
-                child: FadeTransition(
-                  opacity: _fadeAnim,
-                  child: SlideTransition(
-                    position: _slideAnim,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildHeader(),
-                        const SizedBox(height: 32),
-                        _buildGlassmorphismForm(),
-                        const SizedBox(height: 24),
-                        _buildLoginText(),
-                      ],
-                    ),
-                  ),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 32),
+                    _buildGlassmorphismForm(),
+                    const SizedBox(height: 24),
+                    _buildLoginText(),
+                  ],
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -214,24 +187,30 @@ class _SignupScreenState extends State<SignupScreen>
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: AppColors.adaptiveSurface(context),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.adaptiveShadow(context),
+                  blurRadius: 10,
+                ),
+              ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_ios_new,
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               size: 20,
             ),
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
+        Text(
           "Create Your\nAccount",
           style: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.w800,
-            color: Colors.white,
+            color: AppColors.adaptiveTextPrimary(context),
             height: 1.1,
             letterSpacing: -0.5,
           ),
@@ -242,7 +221,7 @@ class _SignupScreenState extends State<SignupScreen>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: AppColors.adaptiveTextSecondary(context),
           ),
         ),
       ],
@@ -257,15 +236,15 @@ class _SignupScreenState extends State<SignupScreen>
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: AppColors.adaptiveBorder(context),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: AppColors.adaptiveShadow(context),
                 blurRadius: 30,
                 spreadRadius: -5,
               ),
@@ -319,7 +298,7 @@ class _SignupScreenState extends State<SignupScreen>
               Text(
                 "I am a:",
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -374,19 +353,19 @@ class _SignupScreenState extends State<SignupScreen>
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.05),
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : AppColors.adaptiveSurfaceMuted(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? AppColors.accent
-                : Colors.white.withValues(alpha: 0.1),
+                ? AppColors.primary
+                : AppColors.adaptiveBorder(context),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.2),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     blurRadius: 15,
                   ),
                 ]
@@ -397,15 +376,15 @@ class _SignupScreenState extends State<SignupScreen>
             Icon(
               icon,
               color: isSelected
-                  ? AppColors.accent
-                  : Colors.white.withValues(alpha: 0.6),
+                  ? AppColors.primary
+                  : AppColors.adaptiveTextSecondary(context),
               size: 32,
             ),
             const SizedBox(height: 8),
             Text(
               title,
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.adaptiveTextPrimary(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 14,
               ),
@@ -415,8 +394,8 @@ class _SignupScreenState extends State<SignupScreen>
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
-                fontSize: 10,
+                color: AppColors.adaptiveTextSecondary(context),
+                fontSize: 11,
               ),
             ),
           ],
@@ -438,31 +417,35 @@ class _SignupScreenState extends State<SignupScreen>
       controller: controller,
       obscureText: isPassword && !isPasswordVisible,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-        prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
+        hintStyle: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
+        prefixIcon: Icon(icon, color: AppColors.adaptiveTextSecondary(context)),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   isPasswordVisible
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: AppColors.adaptiveTextSecondary(context),
                 ),
                 onPressed: onVisibilityToggle,
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
+        fillColor: AppColors.adaptiveSurfaceMuted(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppColors.adaptiveBorder(context)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.adaptiveBorder(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
       ),
@@ -473,49 +456,34 @@ class _SignupScreenState extends State<SignupScreen>
     return SizedBox(
       width: double.infinity,
       height: 56,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.secondary],
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleSignup,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          shadowColor: AppColors.primary.withValues(alpha: 0.4),
+          elevation: 5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.4),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
-        child: ElevatedButton(
-          onPressed: _isLoading ? null : _handleSignup,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            disabledBackgroundColor: Colors.transparent,
-            shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2.5,
-                  ),
-                )
-              : const Text(
-                  "Create Account",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
                 ),
-        ),
+              )
+            : const Text(
+                "Create Account",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
       ),
     );
   }
@@ -527,7 +495,7 @@ class _SignupScreenState extends State<SignupScreen>
         Text(
           "Already have an account? ",
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.7),
+            color: AppColors.adaptiveTextSecondary(context),
             fontSize: 14,
           ),
         ),
@@ -536,7 +504,7 @@ class _SignupScreenState extends State<SignupScreen>
           child: const Text(
             "Login",
             style: TextStyle(
-              color: AppColors.accent,
+              color: AppColors.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),

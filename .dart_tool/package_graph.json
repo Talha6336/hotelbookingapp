@@ -19,7 +19,8 @@
         "google_sign_in",
         "image_picker",
         "intl",
-        "latlong2"
+        "latlong2",
+        "provider"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -49,6 +50,15 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "provider",
+      "version": "6.1.5+1",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "nested"
       ]
     },
     {
@@ -286,6 +296,13 @@
         "stream_channel",
         "string_scanner",
         "term_glyph"
+      ]
+    },
+    {
+      "name": "nested",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {

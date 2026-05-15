@@ -158,92 +158,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       body: GestureDetector(
         onTap: _hideKeyboard,
         behavior: HitTestBehavior.translucent,
-<<<<<<< Updated upstream
-        child: Stack(
-          children: [
-            Container(
-              decoration: const BoxDecoration(gradient: AppColors.darkGradient),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  _buildAppBar(),
-                  _buildSearchAndFilter(),
-                  Expanded(
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: _bookingsStream ?? _getBookingsStream(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return _buildLoadingState();
-                        }
-
-                        if (snapshot.hasError) {
-                          return _buildKeyboardSafeEmptyState(
-                            title: 'Error loading bookings',
-                            subtitle: 'Please check your connection.',
-                            icon: Icons.error_outline,
-                            showButton: false,
-                          );
-                        }
-
-                        final docs = snapshot.data?.docs ?? [];
-                        final stats = _calculateStats(docs);
-                        final filteredDocs = _filterBookings(docs);
-
-                        return ListView(
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
-                          physics: const BouncingScrollPhysics(),
-                          padding: EdgeInsets.only(
-                            bottom:
-                                120 + MediaQuery.of(context).viewInsets.bottom,
-                          ),
-                          children: [
-                            if (docs.isNotEmpty) _buildSummaryCards(stats),
-                            _buildTabs(),
-                            if (docs.isEmpty)
-                              _buildKeyboardSafeEmptyState(
-                                title: 'No bookings yet',
-                                subtitle: 'Start exploring luxury hotels.',
-                                icon: Icons.flight_takeoff,
-                              )
-                            else if (filteredDocs.isEmpty)
-                              _buildKeyboardSafeEmptyState(
-                                title: _searchQuery.isNotEmpty
-                                    ? 'No matching bookings'
-                                    : 'No $_selectedTab bookings',
-                                subtitle: _searchQuery.isNotEmpty
-                                    ? 'Try searching another hotel name, status, price, or booking ID.'
-                                    : "You don't have any $_selectedTab reservations.",
-                                icon: Icons.search_off,
-                                showButton: false,
-                              )
-                            else
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                ),
-                                child: Column(
-                                  children: filteredDocs.map((doc) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 16,
-                                      ),
-                                      child: _PremiumBookingCard(
-                                        bookingData: data,
-                                        bookingId: doc.id,
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                          ],
-=======
         child: AppBackground(
           child: SafeArea(
             bottom: false,
@@ -265,7 +179,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                           subtitle: 'Please check your connection.',
                           icon: Icons.error_outline,
                           showButton: false,
->>>>>>> Stashed changes
                         );
                       }
 
@@ -411,13 +324,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           },
           decoration: InputDecoration(
             hintText: 'Search your bookings...',
-<<<<<<< Updated upstream
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-=======
             hintStyle: TextStyle(
               color: AppColors.adaptiveTextTertiary(context),
             ),
->>>>>>> Stashed changes
             icon: Icon(
               Icons.search,
               color: AppColors.adaptiveTextTertiary(context),
@@ -451,9 +360,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           decoration: BoxDecoration(
             color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(16),
-<<<<<<< Updated upstream
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-=======
             border: Border.all(color: AppColors.adaptiveBorder(context)),
             boxShadow: [
               BoxShadow(
@@ -462,7 +368,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 offset: const Offset(0, 10),
               ),
             ],
->>>>>>> Stashed changes
           ),
           child: child,
         ),
@@ -621,9 +526,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-<<<<<<< Updated upstream
-            Icon(icon, size: 70, color: Colors.white.withValues(alpha: 0.2)),
-=======
             Icon(
               icon,
               size: 70,
@@ -631,7 +533,6 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 context,
               ).withValues(alpha: 0.45),
             ),
->>>>>>> Stashed changes
             const SizedBox(height: 18),
             Text(
               title,
@@ -854,12 +755,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-<<<<<<< Updated upstream
         builder: (context) =>
             SingleHotelMapScreen(hotel: hotelData, showRouteInitially: true),
-=======
-        builder: (context) => SingleHotelMapScreen(hotel: hotelData),
->>>>>>> Stashed changes
       ),
     );
   }
@@ -972,15 +869,11 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         color: AppColors.adaptiveSurfaceMuted(context),
         borderRadius: BorderRadius.circular(16),
       ),
-<<<<<<< Updated upstream
-      child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
-=======
       child: Icon(
         Icons.hotel,
         color: AppColors.adaptiveTextTertiary(context),
         size: 32,
       ),
->>>>>>> Stashed changes
     );
   }
 
@@ -1251,13 +1144,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             child: OutlinedButton(
               onPressed: _openDirections,
               style: OutlinedButton.styleFrom(
-<<<<<<< Updated upstream
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                foregroundColor: Colors.white,
-=======
                 side: BorderSide(color: AppColors.adaptiveBorder(context)),
                 foregroundColor: AppColors.adaptiveTextPrimary(context),
->>>>>>> Stashed changes
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

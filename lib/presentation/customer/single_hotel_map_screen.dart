@@ -187,6 +187,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
     final String hotelName = widget.hotel['name'] ?? 'Unknown Hotel';
     final String city = widget.hotel['city'] ?? 'Unknown City';
     final String address = widget.hotel['address'] ?? 'Address not available';
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: AppBackground(
@@ -212,10 +213,11 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                                   initialZoom: 15,
                                 ),
                                 children: [
-                                  // Dark Map Tiles for Luxury Theme
+                                  // Map Tiles adapt to Light/Dark mode
                                   TileLayer(
-                                    urlTemplate:
-                                        'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                                    urlTemplate: isDark
+                                        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                                        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
                                     subdomains: const ['a', 'b', 'c', 'd'],
                                     userAgentPackageName:
                                         'com.example.hotelbookingapp',
@@ -236,7 +238,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                                   // MARKERS (Hotel & User)
                                   MarkerLayer(
                                     markers: [
-                                      // Hotel Marker (Yellow Accent)
+                                      // Hotel Marker
                                       Marker(
                                         point: _hotelPosition,
                                         width: 52,
@@ -246,7 +248,9 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                                             color: AppColors.accent,
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color: AppColors.backgroundDark1,
+                                              color: AppColors.adaptiveSurface(
+                                                context,
+                                              ),
                                               width: 3,
                                             ),
                                             boxShadow: [
@@ -259,9 +263,11 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                                               ),
                                             ],
                                           ),
-                                          child: const Icon(
+                                          child: Icon(
                                             Icons.hotel_rounded,
-                                            color: AppColors.backgroundDark1,
+                                            color: AppColors.adaptiveSurface(
+                                              context,
+                                            ),
                                             size: 26,
                                           ),
                                         ),
@@ -296,12 +302,13 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                                 ],
                               ),
 
-                              // Bottom Glassmorphism Info Card
+                              // Bottom Adaptive Info Card
                               Positioned(
                                 left: 16,
                                 right: 16,
                                 bottom: 16,
                                 child: _buildHotelInfoCard(
+                                  context,
                                   hotelName: hotelName,
                                   city: city,
                                   address: address,
@@ -309,7 +316,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                               ),
                             ],
                           )
-                        : _buildNoLocationCard(),
+                        : _buildNoLocationCard(context),
                   ),
                 ),
               ],
@@ -324,6 +331,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
     return Row(
       children: [
         _circleGlassButton(
+          context,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () => Navigator.pop(context),
         ),
@@ -332,10 +340,10 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Hotel Location',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 25,
                   fontWeight: FontWeight.w800,
                 ),
@@ -345,7 +353,10 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                 '$hotelName, $city',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -354,7 +365,8 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
     );
   }
 
-  Widget _buildHotelInfoCard({
+  Widget _buildHotelInfoCard(
+    BuildContext context, {
     required String hotelName,
     required String city,
     required String address,
@@ -366,9 +378,9 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.backgroundDark1.withValues(alpha: 0.88),
+            color: AppColors.adaptiveSurface(context).withValues(alpha: 0.88),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -397,8 +409,8 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                           hotelName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppColors.adaptiveTextPrimary(context),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -407,7 +419,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                         Text(
                           city,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.70),
+                            color: AppColors.adaptiveTextSecondary(context),
                             fontSize: 13,
                           ),
                         ),
@@ -422,7 +434,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: AppColors.adaptiveTextTertiary(context),
                   fontSize: 13,
                 ),
               ),
@@ -431,17 +443,19 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
               if (_routePoints.isNotEmpty) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Divider(color: Colors.white.withValues(alpha: 0.15)),
+                  child: Divider(color: AppColors.adaptiveBorder(context)),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildRouteInfoBox(
+                      context,
                       Icons.directions_car_rounded,
                       'Drive',
                       _routeDuration,
                     ),
                     _buildRouteInfoBox(
+                      context,
                       Icons.straighten_rounded,
                       'Distance',
                       _routeDistance,
@@ -458,22 +472,22 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _isLoadingRoute ? null : _fetchRoute,
                     icon: _isLoadingRoute
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 16,
                             width: 16,
                             child: CircularProgressIndicator(
-                              color: AppColors.backgroundDark1,
+                              color: AppColors.adaptiveBackground(context),
                               strokeWidth: 2,
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.directions_rounded,
-                            color: AppColors.backgroundDark1,
+                            color: AppColors.adaptiveBackground(context),
                           ),
                     label: Text(
                       _isLoadingRoute ? 'Calculating...' : 'Get Directions',
-                      style: const TextStyle(
-                        color: AppColors.backgroundDark1,
+                      style: TextStyle(
+                        color: AppColors.adaptiveBackground(context),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -493,33 +507,38 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
     );
   }
 
-  Widget _buildRouteInfoBox(IconData icon, String label, String value) {
+  Widget _buildRouteInfoBox(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Column(
       children: [
         Icon(icon, color: AppColors.accent, size: 28),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.adaptiveTextPrimary(context),
           ),
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.7),
+            color: AppColors.adaptiveTextSecondary(context),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildNoLocationCard() {
+  Widget _buildNoLocationCard(BuildContext context) {
     return Container(
-      color: AppColors.backgroundDark1.withValues(alpha: 0.90),
+      color: AppColors.adaptiveBackground(context),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -530,11 +549,9 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
               child: Container(
                 padding: const EdgeInsets.all(26),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.10),
+                  color: AppColors.adaptiveSurface(context),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.20),
-                  ),
+                  border: Border.all(color: AppColors.adaptiveBorder(context)),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -545,10 +562,10 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                       size: 70,
                     ),
                     const SizedBox(height: 18),
-                    const Text(
+                    Text(
                       'Location not available',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.adaptiveTextPrimary(context),
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -558,7 +575,7 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
                       'This hotel does not have latitude and longitude saved.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.70),
+                        color: AppColors.adaptiveTextSecondary(context),
                       ),
                     ),
                   ],
@@ -571,7 +588,8 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
     );
   }
 
-  Widget _circleGlassButton({
+  Widget _circleGlassButton(
+    BuildContext context, {
     required IconData icon,
     required VoidCallback onTap,
   }) {
@@ -585,11 +603,15 @@ class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.13),
+              color: AppColors.adaptiveSurface(context).withValues(alpha: 0.5),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
             ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            child: Icon(
+              icon,
+              color: AppColors.adaptiveTextPrimary(context),
+              size: 20,
+            ),
           ),
         ),
       ),

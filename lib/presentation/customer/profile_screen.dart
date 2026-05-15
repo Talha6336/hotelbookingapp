@@ -3,7 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hotelbookingapp/core/theme/theme_provider.dart';
 import 'package:hotelbookingapp/presentation/customer/customer_bookings_screen.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
@@ -82,7 +84,8 @@ class ProfileScreen extends StatelessWidget {
               ? _buildLoginRequired(context)
               : SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 30),
+                  // THE FIX: Increased bottom padding to 130 to clear the floating bottom navigation bar
+                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 130),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -123,6 +126,7 @@ class ProfileScreen extends StatelessWidget {
 
                           if (snapshot.hasError) {
                             return _glassCard(
+                              context: context,
                               child: Text(
                                 'Could not load profile data.',
                                 style: TextStyle(
@@ -133,18 +137,13 @@ class ProfileScreen extends StatelessWidget {
                           }
 
                           final userData = snapshot.data?.data() ?? {};
-
                           final String name = userData['name'] ?? 'Guest User';
-
                           final String email =
                               userData['email'] ??
                               currentUser.email ??
                               'No email';
-
                           final String phone = userData['phone'] ?? 'Not added';
-
                           final String role = userData['role'] ?? 'customer';
-
                           final String? profileImage = userData['profileImage'];
 
                           return Column(
@@ -212,6 +211,7 @@ class ProfileScreen extends StatelessWidget {
     String? profileImage,
   }) {
     return _glassCard(
+      context: context,
       padding: const EdgeInsets.all(22),
       child: Column(
         children: [
@@ -244,7 +244,11 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
             child: profileImage == null || profileImage.isEmpty
-                ? Icon(Icons.person_rounded, color: Colors.white, size: 46)
+                ? const Icon(
+                    Icons.person_rounded,
+                    color: Colors.white,
+                    size: 46,
+                  )
                 : null,
           ),
           const SizedBox(height: 16),
@@ -278,7 +282,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: Text(
               role.toUpperCase(),
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.accent,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -291,7 +295,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsCard(BuildContext parentContext) {
+  Widget _buildStatsCard(BuildContext context) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _bookingsStream(),
       builder: (context, snapshot) {
@@ -301,18 +305,17 @@ class ProfileScreen extends StatelessWidget {
 
         if (snapshot.hasData) {
           final bookings = snapshot.data!.docs;
-
           totalBookings = bookings.length;
-
-          pendingBookings = bookings.where((doc) {
-            final data = doc.data();
-            return data['status'] == 'pending';
-          }).length;
-
-          acceptedBookings = bookings.where((doc) {
-            final data = doc.data();
-            return data['status'] == 'accepted';
-          }).length;
+          pendingBookings = bookings
+              .where((doc) => doc.data()['status'] == 'pending')
+              .length;
+          acceptedBookings = bookings
+              .where(
+                (doc) =>
+                    doc.data()['status'] == 'accepted' ||
+                    doc.data()['status'] == 'approved',
+              )
+              .length;
         }
 
         return Row(
@@ -356,6 +359,7 @@ class ProfileScreen extends StatelessWidget {
     required BuildContext context,
   }) {
     return _glassCard(
+      context: context,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       child: Column(
         children: [
@@ -390,6 +394,7 @@ class ProfileScreen extends StatelessWidget {
     required String role,
   }) {
     return _glassCard(
+      context: context,
       child: Column(
         children: [
           _profileInfoRow(
@@ -425,7 +430,15 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildActionCard(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    // Detect if the app is currently in dark mode to update the switch
+
+    final bool isDarkMode =
+        themeProvider.themeMode == ThemeMode.dark ||
+        (themeProvider.themeMode == ThemeMode.system &&
+            Theme.of(context).brightness == Brightness.dark);
     return _glassCard(
+      context: context,
       child: Column(
         children: [
           _actionTile(
@@ -454,6 +467,25 @@ class ProfileScreen extends StatelessWidget {
             subtitle: 'Contact hotel booking support',
             onTap: () => _showSupportDialog(context),
           ),
+          _divider(context),
+
+          // NEW: Dark Mode Toggle
+          _actionTile(
+            context: context,
+            icon: Icons.dark_mode_outlined,
+            title: 'Dark Mode',
+            subtitle: 'Toggle app visual theme',
+            trailing: Switch(
+              value: isDarkMode,
+              activeColor: AppColors.primary,
+              onChanged: (value) {
+                // To make this switch work, call your Theme Provider here!
+                themeProvider.toggleTheme(value);
+              },
+            ),
+            onTap: () {}, // Let the switch handle the tap
+          ),
+
           _divider(context),
           _actionTile(
             context: context,
@@ -505,6 +537,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  // Modified to accept an optional 'trailing' widget for the Switch
   Widget _actionTile({
     required BuildContext context,
     required IconData icon,
@@ -512,6 +545,7 @@ class ProfileScreen extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
     bool isDanger = false,
+    Widget? trailing,
   }) {
     final color = isDanger ? Colors.redAccent : AppColors.accent;
 
@@ -558,11 +592,12 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: AppColors.adaptiveTextTertiary(context),
-              size: 16,
-            ),
+            trailing ??
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.adaptiveTextTertiary(context),
+                  size: 16,
+                ),
           ],
         ),
       ),
@@ -600,24 +635,23 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _glassCard({
+    required BuildContext context,
     required Widget child,
     EdgeInsets padding = const EdgeInsets.all(18),
   }) {
-    return Builder(
-      builder: (context) => ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Container(
-            width: double.infinity,
-            padding: padding,
-            decoration: BoxDecoration(
-              color: AppColors.adaptiveSurface(context),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: AppColors.adaptiveBorder(context)),
-            ),
-            child: child,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          width: double.infinity,
+          padding: padding,
+          decoration: BoxDecoration(
+            color: AppColors.adaptiveSurface(context),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
           ),
+          child: child,
         ),
       ),
     );
@@ -632,10 +666,15 @@ class ProfileScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: _glassCard(
+          context: context,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.login_rounded, color: AppColors.accent, size: 70),
+              const Icon(
+                Icons.login_rounded,
+                color: AppColors.accent,
+                size: 70,
+              ),
               const SizedBox(height: 18),
               Text(
                 'Login Required',
@@ -666,7 +705,7 @@ class ProfileScreen extends StatelessWidget {
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.adaptiveTextPrimary(context),
                 ),
-                child: Text('Go to Login'),
+                child: const Text('Go to Login'),
               ),
             ],
           ),
@@ -686,8 +725,8 @@ class ProfileScreen extends StatelessWidget {
           ),
           title: Row(
             children: [
-              Icon(Icons.support_agent_rounded, color: AppColors.accent),
-              SizedBox(width: 10),
+              const Icon(Icons.support_agent_rounded, color: AppColors.accent),
+              const SizedBox(width: 10),
               Text(
                 'Help & Support',
                 style: TextStyle(
@@ -719,7 +758,7 @@ class ProfileScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(dialogContext);
               },
-              child: Text(
+              child: const Text(
                 'Close',
                 style: TextStyle(
                   color: AppColors.accent,
@@ -744,7 +783,11 @@ class ProfileScreen extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
           ),
-          child: Icon(Icons.code_rounded, color: AppColors.accent, size: 20),
+          child: const Icon(
+            Icons.code_rounded,
+            color: AppColors.accent,
+            size: 20,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -798,7 +841,7 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.pop(dialogContext);
                 _logout(context);
               },
-              child: Text(
+              child: const Text(
                 'Logout',
                 style: TextStyle(
                   color: Colors.redAccent,
