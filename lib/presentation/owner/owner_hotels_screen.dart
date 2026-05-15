@@ -324,7 +324,18 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                           },
                         )
                       : null,
+                   filled: false,
+                  fillColor: Colors.transparent,
+
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+
+                  isDense: true,
+                  
                 ),
               ),
             ),

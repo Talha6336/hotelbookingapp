@@ -111,7 +111,7 @@ class AppColors {
       isDark(context) ? darkBackground : lightBackground;
 
   static Color adaptiveSurface(BuildContext context) =>
-      isDark(context) ? darkSurfaceElevated : lightSurface;
+      isDark(context) ? darkBackground : lightBackground;
 
   static Color adaptiveSurfaceMuted(BuildContext context) =>
       isDark(context) ? darkSurfaceMuted : lightSurfaceMuted;

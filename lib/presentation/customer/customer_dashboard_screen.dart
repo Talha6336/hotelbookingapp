@@ -510,7 +510,18 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                   hintStyle: TextStyle(
                     color: AppColors.adaptiveTextTertiary(context),
                   ),
+                   filled: false,
+                  fillColor: Colors.transparent,
+
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+
+                  isDense: true,
+                 
                 ),
               ),
             ),

@@ -308,45 +308,78 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
   }
 
   Widget _buildSearchAndFilter() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: _glassSearchCard(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: TextField(
-          controller: _searchController,
-          style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
-          keyboardType: TextInputType.text,
-          textInputAction: TextInputAction.search,
-          onChanged: (value) {
-            setState(() {
-              _searchQuery = value;
-            });
-          },
-          decoration: InputDecoration(
-            hintText: 'Search your bookings...',
-            hintStyle: TextStyle(
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+    child: _glassSearchCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: SizedBox(
+        height: 48,
+        child: Row(
+          children: [
+            Icon(
+              Icons.search_rounded,
+              size: 22,
               color: AppColors.adaptiveTextTertiary(context),
             ),
-            icon: Icon(
-              Icons.search,
-              color: AppColors.adaptiveTextTertiary(context),
+
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(
+                  color: AppColors.adaptiveTextPrimary(context),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+                cursorColor: AppColors.primary,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.search,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.trim();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search your bookings...',
+                  hintStyle: TextStyle(
+                    color: AppColors.adaptiveTextTertiary(context),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
+
+                  // Important: removes TextField's own visual layer
+                  filled: false,
+                  fillColor: Colors.transparent,
+
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
             ),
-            suffixIcon: _searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      color: AppColors.adaptiveTextTertiary(context),
-                    ),
-                    onPressed: _clearSearch,
-                  )
-                : null,
-            border: InputBorder.none,
-          ),
+
+            if (_searchQuery.isNotEmpty)
+              GestureDetector(
+                onTap: _clearSearch,
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: AppColors.adaptiveTextTertiary(context),
+                ),
+              ),
+          ],
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _glassSearchCard({
     required Widget child,
     required EdgeInsets padding,
@@ -375,145 +408,134 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     );
   }
 
-  Widget _buildSummaryCards(Map<String, int> stats) {
-    return SizedBox(
-      height: 90,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        children: [
-          _buildStatCard('Total', stats['Total'] ?? 0, const Color(0xFF2196F3)),
-          _buildStatCard(
-            'Pending',
-            stats['Pending'] ?? 0,
-            const Color(0xFFFF9800),
-          ),
-          _buildStatCard(
-            'Approved',
-            stats['Approved'] ?? 0,
-            const Color(0xFF4CAF50),
-          ),
-          _buildStatCard(
-            'Cancelled',
-            stats['Cancelled'] ?? 0,
-            const Color(0xFFF44336),
-          ),
-        ],
-      ),
-    );
-  }
+Widget _buildSummaryCards(Map<String, int> stats) {
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    physics: const BouncingScrollPhysics(),
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    child: Row(
+      children: [
+        _buildStatCard('Total', stats['Total'] ?? 0, const Color(0xFF2196F3)),
+        _buildStatCard('Pending', stats['Pending'] ?? 0, const Color(0xFFFF9800)),
+        _buildStatCard('Approved', stats['Approved'] ?? 0, const Color(0xFF4CAF50)),
+        _buildStatCard('Cancelled', stats['Cancelled'] ?? 0, const Color(0xFFF44336)),
+      ],
+    ),
+  );
+}
 
-  Widget _buildStatCard(String title, int count, Color color) {
-    return Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.adaptiveSurface(context),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.adaptiveShadow(context),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+Widget _buildStatCard(String title, int count, Color color) {
+  return Container(
+    width: 120,
+    margin: const EdgeInsets.only(right: 12),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: AppColors.adaptiveSurface(context),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: color.withValues(alpha: 0.18),
+        width: 1,
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: AppColors.adaptiveTextSecondary(context),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
-        ],
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: AppColors.adaptiveTextSecondary(context),
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              count.toString(),
-              style: TextStyle(
-                color: color,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
         ),
-      ),
-    );
-  }
+        const SizedBox(height: 4),
+        Text(
+          count.toString(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildTabs() {
-    return SizedBox(
-      height: 70,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-        itemCount: _tabs.length,
-        itemBuilder: (context, index) {
-          final tab = _tabs[index];
-          final isSelected = _selectedTab == tab;
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    physics: const BouncingScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+    child: Row(
+      children: _tabs.map((tab) {
+        final isSelected = _selectedTab == tab;
 
-          return GestureDetector(
-            onTap: () {
-              _hideKeyboard();
+        return GestureDetector(
+          onTap: () {
+            _hideKeyboard();
 
-              setState(() {
-                _selectedTab = tab;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                gradient: isSelected
-                    ? const LinearGradient(
-                        colors: [AppColors.primary, AppColors.secondary],
-                      )
-                    : null,
-                color: isSelected ? null : AppColors.adaptiveSurface(context),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isSelected
-                      ? Colors.transparent
-                      : AppColors.adaptiveBorder(context),
-                ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : [],
+            setState(() {
+              _selectedTab = tab;
+            });
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            margin: const EdgeInsets.only(right: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? const LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.secondary,
+                      ],
+                    )
+                  : null,
+              color: isSelected
+                  ? null
+                  : AppColors.adaptiveSurface(context),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isSelected
+                    ? Colors.transparent
+                    : AppColors.adaptiveBorder(context),
               ),
-              child: Center(
-                child: Text(
-                  tab,
-                  style: TextStyle(
-                    color: isSelected
-                        ? Colors.white
-                        : AppColors.adaptiveTextSecondary(context),
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  ),
-                ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.28),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Text(
+              tab,
+              style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : AppColors.adaptiveTextSecondary(context),
+                fontWeight: isSelected
+                    ? FontWeight.bold
+                    : FontWeight.w500,
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
   Widget _buildKeyboardSafeEmptyState({
     required String title,
     required String subtitle,
