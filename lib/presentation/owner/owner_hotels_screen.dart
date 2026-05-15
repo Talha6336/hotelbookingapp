@@ -77,7 +77,9 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
         children: [
           // 1. Luxury Gradient Background
           Container(
-            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
+            decoration: BoxDecoration(
+              gradient: AppColors.adaptiveBackgroundGradient(context),
+            ),
           ),
 
           // 3. Main Content
@@ -94,7 +96,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                     stream: _hotelsStream, // Uses the cached stream
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
+                        return Center(
                           child: CircularProgressIndicator(
                             color: AppColors.accent,
                           ),
@@ -102,10 +104,12 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                       }
 
                       if (snapshot.hasError) {
-                        return const Center(
+                        return Center(
                           child: Text(
                             "Error loading hotels",
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(
+                              color: AppColors.adaptiveTextPrimary(context),
+                            ),
                           ),
                         );
                       }
@@ -153,11 +157,15 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                           if (docs.isEmpty)
                             SliverFillRemaining(child: _buildEmptyState())
                           else if (filteredDocs.isEmpty)
-                            const SliverFillRemaining(
+                            SliverFillRemaining(
                               child: Center(
                                 child: Text(
                                   "No hotels match your search.",
-                                  style: TextStyle(color: Colors.white70),
+                                  style: TextStyle(
+                                    color: AppColors.adaptiveTextSecondary(
+                                      context,
+                                    ),
+                                  ),
                                 ),
                               ),
                             )
@@ -204,14 +212,14 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
             MaterialPageRoute(builder: (_) => const AddHotelScreen()),
           ),
           backgroundColor: AppColors.accent,
-          icon: const Icon(
+          icon: Icon(
             Icons.add_business_rounded,
-            color: AppColors.backgroundDark1,
+            color: AppColors.adaptiveTextPrimary(context),
           ),
-          label: const Text(
+          label: Text(
             "Add Hotel",
             style: TextStyle(
-              color: AppColors.backgroundDark1,
+              color: AppColors.adaptiveTextPrimary(context),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -232,28 +240,28 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_back_ios_new,
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   size: 18,
                 ),
                 onPressed: () {
-                  if (widget.onBackToHome!=null){
+                  if (widget.onBackToHome != null) {
                     widget.onBackToHome!();
-                  }else if(Navigator.canPop(context)){
+                  } else if (Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }
                 },
               ),
             ),
           ),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 "My Hotels",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -262,11 +270,13 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
               SizedBox(height: 4),
               Text(
                 "Manage your hotel properties",
-                style: TextStyle(color: Colors.white70, fontSize: 14),
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
-          
         ],
       ),
     );
@@ -283,7 +293,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
               child: TextField(
                 controller: _searchController,
                 // Removed the buggy FocusNode completely
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
                 keyboardType: TextInputType.text,
                 textInputAction: TextInputAction.search,
                 onChanged: (val) {
@@ -294,17 +304,17 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                 decoration: InputDecoration(
                   hintText: "Search your hotels...",
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: AppColors.adaptiveTextTertiary(context),
                   ),
                   icon: Icon(
                     Icons.search,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: AppColors.adaptiveTextTertiary(context),
                   ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.close_rounded,
-                            color: Colors.white54,
+                            color: AppColors.adaptiveTextTertiary(context),
                           ),
                           onPressed: () {
                             _searchController.clear();
@@ -319,7 +329,6 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
               ),
             ),
           ),
-          
         ],
       ),
     );
@@ -367,7 +376,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: AppColors.adaptiveSurface(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
@@ -381,17 +390,17 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
             Row(
               children: [
                 Icon(icon, color: color, size: 16),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   title,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: AppColors.adaptiveTextSecondary(context),
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               value,
               style: TextStyle(
@@ -414,22 +423,22 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
           Icon(
             Icons.domain_disabled_rounded,
             size: 80,
-            color: Colors.white.withValues(alpha: 0.2),
+            color: AppColors.adaptiveTextTertiary(context),
           ),
-          const SizedBox(height: 20),
-          const Text(
+          SizedBox(height: 20),
+          Text(
             "No Hotels Added Yet",
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             "Start building your hotel business today.",
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 15,
             ),
           ),
@@ -446,9 +455,9 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
           ),
           child: child,
         ),
@@ -461,7 +470,11 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
       children: [
         _glassCard(
           padding: const EdgeInsets.all(12),
-          child: Icon(icon, color: Colors.white, size: 22),
+          child: Icon(
+            icon,
+            color: AppColors.adaptiveTextPrimary(context),
+            size: 22,
+          ),
         ),
         if (showBadge)
           Positioned(
@@ -470,7 +483,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
             child: Container(
               height: 8,
               width: 8,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.redAccent,
                 shape: BoxShape.circle,
               ),
@@ -519,9 +532,9 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: AppColors.adaptiveSurface(context),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,7 +552,7 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                         errorBuilder: (c, e, s) => Container(
                           height: 160,
                           color: Colors.white10,
-                          child: const Icon(
+                          child: Icon(
                             Icons.broken_image,
                             color: Colors.white30,
                             size: 50,
@@ -564,8 +577,8 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           ),
                           child: Text(
                             status,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppColors.adaptiveTextPrimary(context),
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -588,8 +601,8 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               name,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppColors.adaptiveTextPrimary(context),
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -599,16 +612,16 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           ),
                           Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.star_rounded,
                                 color: AppColors.accent,
                                 size: 18,
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppColors.adaptiveTextPrimary(context),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -616,26 +629,26 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.location_on,
-                            color: Colors.white54,
+                            color: AppColors.adaptiveTextTertiary(context),
                             size: 14,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Text(
                             city,
-                            style: const TextStyle(
-                              color: Colors.white54,
+                            style: TextStyle(
+                              color: AppColors.adaptiveTextTertiary(context),
                               fontSize: 13,
                             ),
                           ),
                           const Spacer(),
                           Text(
                             "Rs. ${price.toInt()} / night",
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppColors.accent,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -643,17 +656,32 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      const Divider(color: Colors.white12, height: 1),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
+                      Divider(
+                        color: AppColors.adaptiveBorder(context),
+                        height: 1,
+                      ),
+                      SizedBox(height: 16),
 
                       // Mini Performance Row
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildMiniStat(Icons.book_online, "12 Bookings"),
-                          _buildMiniStat(Icons.meeting_room, "4/10 Rooms"),
-                          _buildMiniStat(Icons.visibility, "1.2k Views"),
+                          _buildMiniStat(
+                            context,
+                            Icons.book_online,
+                            "12 Bookings",
+                          ),
+                          _buildMiniStat(
+                            context,
+                            Icons.meeting_room,
+                            "4/10 Rooms",
+                          ),
+                          _buildMiniStat(
+                            context,
+                            Icons.visibility,
+                            "1.2k Views",
+                          ),
                         ],
                       ),
                     ],
@@ -667,14 +695,17 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
     );
   }
 
-  Widget _buildMiniStat(IconData icon, String label) {
+  Widget _buildMiniStat(BuildContext context, IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white54, size: 14),
-        const SizedBox(width: 4),
+        Icon(icon, color: AppColors.adaptiveTextTertiary(context), size: 14),
+        SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          style: TextStyle(
+            color: AppColors.adaptiveTextSecondary(context),
+            fontSize: 12,
+          ),
         ),
       ],
     );

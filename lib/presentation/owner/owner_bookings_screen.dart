@@ -165,14 +165,14 @@ class OwnerBookingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundDark1,
+          backgroundColor: AppColors.adaptiveSurface(dialogContext),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
           title: Text(
             isAccept ? 'Accept Booking?' : 'Reject Booking?',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(dialogContext),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -181,7 +181,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                 ? 'Are you sure you want to accept this booking request?'
                 : 'Are you sure you want to reject this booking request?',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: AppColors.adaptiveTextSecondary(dialogContext),
             ),
           ),
           actions: [
@@ -192,7 +192,7 @@ class OwnerBookingsScreen extends StatelessWidget {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.70),
+                  color: AppColors.adaptiveTextSecondary(dialogContext),
                 ),
               ),
             ),
@@ -236,13 +236,12 @@ class OwnerBookingsScreen extends StatelessWidget {
 
                 const SizedBox(height: 26),
 
-                const Text(
+                Text(
                   'Booking Requests',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.adaptiveTextPrimary(context),
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
                   ),
                 ),
 
@@ -251,7 +250,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                 Text(
                   'Accept or reject customer booking requests.',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.70),
+                    color: AppColors.adaptiveTextSecondary(context),
                     fontSize: 14,
                   ),
                 ),
@@ -261,6 +260,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                 Expanded(
                   child: currentUser == null
                       ? _buildMessageState(
+                          context: context,
                           icon: Icons.login_rounded,
                           title: 'Login required',
                           subtitle: 'Please login as owner first.',
@@ -283,6 +283,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                               );
 
                               return _buildMessageState(
+                                context: context,
                                 icon: Icons.error_outline,
                                 title: 'Something went wrong',
                                 subtitle:
@@ -293,6 +294,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                             if (!snapshot.hasData ||
                                 snapshot.data!.docs.isEmpty) {
                               return _buildMessageState(
+                                context: context,
                                 icon: Icons.event_busy_rounded,
                                 title: 'No booking requests',
                                 subtitle:
@@ -334,17 +336,19 @@ class OwnerBookingsScreen extends StatelessWidget {
     return Row(
       children: [
         _circleGlassButton(
+          context: context,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () {
-            if(onBackToHome!=null){
+            if (onBackToHome != null) {
               onBackToHome!();
-            }else if(Navigator.canPop(context)){
+            } else if (Navigator.canPop(context)) {
               Navigator.pop(context);
             }
           },
         ),
         const Spacer(),
         _circleGlassButton(
+          context: context,
           icon: Icons.refresh_rounded,
           onTap: () {},
         ),
@@ -364,6 +368,7 @@ class OwnerBookingsScreen extends StatelessWidget {
     final num totalPrice = booking['totalPrice'] ?? 0;
 
     return _glassCard(
+      context: context,
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,20 +384,21 @@ class OwnerBookingsScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   hotelName,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.adaptiveTextPrimary(context),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              _buildStatusChip(status),
+              _buildStatusChip(context, status),
             ],
           ),
 
           const SizedBox(height: 18),
 
           _infoRow(
+            context: context,
             icon: Icons.person_outline_rounded,
             title: 'Customer',
             value: customerName,
@@ -401,6 +407,7 @@ class OwnerBookingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
 
           _infoRow(
+            context: context,
             icon: Icons.login_rounded,
             title: 'Check-in',
             value: _formatDate(booking['checkInDate']),
@@ -409,6 +416,7 @@ class OwnerBookingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
 
           _infoRow(
+            context: context,
             icon: Icons.logout_rounded,
             title: 'Check-out',
             value: _formatDate(booking['checkOutDate']),
@@ -417,6 +425,7 @@ class OwnerBookingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
 
           _infoRow(
+            context: context,
             icon: Icons.night_shelter_rounded,
             title: 'Total nights',
             value: '$totalNights',
@@ -425,6 +434,7 @@ class OwnerBookingsScreen extends StatelessWidget {
           const SizedBox(height: 10),
 
           _infoRow(
+            context: context,
             icon: Icons.payments_rounded,
             title: 'Total price',
             value: 'Rs. ${totalPrice.toInt()}',
@@ -446,9 +456,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.redAccent,
-                      side: const BorderSide(
-                        color: Colors.redAccent,
-                      ),
+                      side: const BorderSide(color: Colors.redAccent),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -456,9 +464,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                     ),
                     child: const Text(
                       'Reject',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -476,7 +482,9 @@ class OwnerBookingsScreen extends StatelessWidget {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
-                      foregroundColor: AppColors.backgroundDark1,
+                      foregroundColor: AppColors.isDark(context)
+                          ? AppColors.backgroundDark1
+                          : Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -484,9 +492,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                     ),
                     child: const Text(
                       'Accept',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -498,20 +504,23 @@ class OwnerBookingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(BuildContext context, String status) {
+    final color = _statusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: _statusColor(status).withValues(alpha: 0.18),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _statusColor(status).withValues(alpha: 0.75),
+          color: color.withValues(
+            alpha: AppColors.isDark(context) ? 0.75 : 0.45,
+          ),
         ),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          color: _statusColor(status),
+          color: color,
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
@@ -520,23 +529,20 @@ class OwnerBookingsScreen extends StatelessWidget {
   }
 
   Widget _infoRow({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String value,
   }) {
     return Row(
       children: [
-        Icon(
-          icon,
-          color: AppColors.accent,
-          size: 20,
-        ),
+        Icon(icon, color: AppColors.accent, size: 20),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             title,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.62),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 13,
             ),
           ),
@@ -546,8 +552,8 @@ class OwnerBookingsScreen extends StatelessWidget {
             value,
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -557,6 +563,7 @@ class OwnerBookingsScreen extends StatelessWidget {
   }
 
   Widget _circleGlassButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onTap,
   }) {
@@ -570,15 +577,20 @@ class OwnerBookingsScreen extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.13),
+              color: AppColors.adaptiveGlass(context),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: AppColors.adaptiveGlassBorder(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.adaptiveShadow(context),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               size: 20,
             ),
           ),
@@ -588,6 +600,7 @@ class OwnerBookingsScreen extends StatelessWidget {
   }
 
   Widget _glassCard({
+    required BuildContext context,
     required Widget child,
     EdgeInsets margin = EdgeInsets.zero,
     EdgeInsets padding = const EdgeInsets.all(18),
@@ -603,11 +616,16 @@ class OwnerBookingsScreen extends StatelessWidget {
             width: double.infinity,
             padding: padding,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.10),
+              color: AppColors.adaptiveSurface(context),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.20),
-              ),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.adaptiveShadow(context),
+                  blurRadius: AppColors.isDark(context) ? 22 : 30,
+                  offset: const Offset(0, 14),
+                ),
+              ],
             ),
             child: child,
           ),
@@ -617,26 +635,24 @@ class OwnerBookingsScreen extends StatelessWidget {
   }
 
   Widget _buildMessageState({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
   }) {
     return Center(
       child: _glassCard(
+        context: context,
         padding: const EdgeInsets.all(26),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: AppColors.accent,
-              size: 70,
-            ),
+            Icon(icon, color: AppColors.accent, size: 70),
             const SizedBox(height: 18),
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -645,9 +661,7 @@ class OwnerBookingsScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               subtitle,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
-              ),
+              style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
               textAlign: TextAlign.center,
             ),
           ],

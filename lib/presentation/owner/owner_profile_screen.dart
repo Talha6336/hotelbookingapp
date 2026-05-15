@@ -104,10 +104,10 @@ class OwnerProfileScreen extends StatelessWidget {
 
                       const SizedBox(height: 26),
 
-                      const Text(
+                      Text(
                         'Owner Profile',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.adaptiveTextPrimary(context),
                           fontSize: 30,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
@@ -119,7 +119,7 @@ class OwnerProfileScreen extends StatelessWidget {
                       Text(
                         'Manage your hotel owner account.',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.70),
+                          color: AppColors.adaptiveTextSecondary(context),
                           fontSize: 14,
                         ),
                       ),
@@ -143,9 +143,11 @@ class OwnerProfileScreen extends StatelessWidget {
 
                           if (snapshot.hasError) {
                             return _glassCard(
-                              child: const Text(
+                              child: Text(
                                 'Could not load profile data.',
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                  color: AppColors.adaptiveTextPrimary(context),
+                                ),
                               ),
                             );
                           }
@@ -168,6 +170,7 @@ class OwnerProfileScreen extends StatelessWidget {
                           return Column(
                             children: [
                               _buildProfileHeader(
+                                context: context,
                                 name: name,
                                 email: email,
                                 role: role,
@@ -176,11 +179,12 @@ class OwnerProfileScreen extends StatelessWidget {
 
                               const SizedBox(height: 20),
 
-                              _buildOwnerStats(),
+                              _buildOwnerStats(context),
 
                               const SizedBox(height: 20),
 
                               _buildInfoCard(
+                                context: context,
                                 name: name,
                                 email: email,
                                 phone: phone,
@@ -206,6 +210,7 @@ class OwnerProfileScreen extends StatelessWidget {
     return Row(
       children: [
         _circleGlassButton(
+          context: context,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () {
             if (this.onBackToHome != null) {
@@ -217,6 +222,7 @@ class OwnerProfileScreen extends StatelessWidget {
         ),
         const Spacer(),
         _circleGlassButton(
+          context: context,
           icon: Icons.edit_outlined,
           onTap: () => _openEditProfile(context),
         ),
@@ -225,6 +231,7 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader({
+    required BuildContext context,
     required String name,
     required String email,
     required String role,
@@ -251,7 +258,7 @@ class OwnerProfileScreen extends StatelessWidget {
                     )
                   : null,
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.28),
+                color: AppColors.adaptiveBorder(context),
                 width: 2,
               ),
               boxShadow: [
@@ -263,11 +270,7 @@ class OwnerProfileScreen extends StatelessWidget {
               ],
             ),
             child: profileImage == null || profileImage.isEmpty
-                ? const Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 46,
-                  )
+                ? Icon(Icons.person_rounded, color: Colors.white, size: 46)
                 : null,
           ),
 
@@ -276,8 +279,8 @@ class OwnerProfileScreen extends StatelessWidget {
           Text(
             name,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
               fontSize: 23,
               fontWeight: FontWeight.w800,
             ),
@@ -289,7 +292,7 @@ class OwnerProfileScreen extends StatelessWidget {
             email,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.68),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 13,
             ),
           ),
@@ -307,7 +310,7 @@ class OwnerProfileScreen extends StatelessWidget {
             ),
             child: Text(
               role.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.accent,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -320,7 +323,7 @@ class OwnerProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOwnerStats() {
+  Widget _buildOwnerStats(BuildContext parentContext) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _ownerHotelsStream(),
       builder: (context, hotelSnapshot) {
@@ -358,6 +361,7 @@ class OwnerProfileScreen extends StatelessWidget {
                         title: 'Hotels',
                         value: totalHotels.toString(),
                         icon: Icons.business_rounded,
+                        context: context,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -366,6 +370,7 @@ class OwnerProfileScreen extends StatelessWidget {
                         title: 'Requests',
                         value: totalRequests.toString(),
                         icon: Icons.receipt_long_rounded,
+                        context: context,
                       ),
                     ),
                   ],
@@ -378,6 +383,7 @@ class OwnerProfileScreen extends StatelessWidget {
                         title: 'Pending',
                         value: pendingRequests.toString(),
                         icon: Icons.pending_actions_rounded,
+                        context: context,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -386,6 +392,7 @@ class OwnerProfileScreen extends StatelessWidget {
                         title: 'Accepted',
                         value: acceptedRequests.toString(),
                         icon: Icons.check_circle_rounded,
+                        context: context,
                       ),
                     ),
                   ],
@@ -402,6 +409,7 @@ class OwnerProfileScreen extends StatelessWidget {
     required String title,
     required String value,
     required IconData icon,
+    required BuildContext context,
   }) {
     return _glassCard(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
@@ -411,8 +419,8 @@ class OwnerProfileScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
               fontSize: 21,
               fontWeight: FontWeight.w800,
             ),
@@ -421,7 +429,7 @@ class OwnerProfileScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.62),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 12,
             ),
           ),
@@ -431,6 +439,7 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _buildInfoCard({
+    required BuildContext context,
     required String name,
     required String email,
     required String phone,
@@ -440,24 +449,28 @@ class OwnerProfileScreen extends StatelessWidget {
       child: Column(
         children: [
           _profileInfoRow(
+            context: context,
             icon: Icons.person_outline_rounded,
             title: 'Full Name',
             value: name,
           ),
-          _divider(),
+          _divider(context),
           _profileInfoRow(
+            context: context,
             icon: Icons.email_outlined,
             title: 'Email',
             value: email,
           ),
-          _divider(),
+          _divider(context),
           _profileInfoRow(
+            context: context,
             icon: Icons.phone_outlined,
             title: 'Phone',
             value: phone,
           ),
-          _divider(),
+          _divider(context),
           _profileInfoRow(
+            context: context,
             icon: Icons.verified_user_outlined,
             title: 'Role',
             value: role,
@@ -472,6 +485,7 @@ class OwnerProfileScreen extends StatelessWidget {
       child: Column(
         children: [
           _actionTile(
+            context: context,
             icon: Icons.business_rounded,
             title: 'My Hotels',
             subtitle: 'View and manage your hotels',
@@ -488,8 +502,9 @@ class OwnerProfileScreen extends StatelessWidget {
               }
             },
           ),
-          _divider(),
+          _divider(context),
           _actionTile(
+            context: context,
             icon: Icons.receipt_long_rounded,
             title: 'Booking Requests',
             subtitle: 'Accept or reject booking requests',
@@ -506,8 +521,13 @@ class OwnerProfileScreen extends StatelessWidget {
               }
             },
           ),
+<<<<<<< Updated upstream
           _divider(),
+=======
+          _divider(context),
+>>>>>>> Stashed changes
           _actionTile(
+            context: context,
             icon: Icons.logout_rounded,
             title: 'Logout',
             subtitle: 'Sign out from your account',
@@ -520,6 +540,7 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _profileInfoRow({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String value,
@@ -534,7 +555,7 @@ class OwnerProfileScreen extends StatelessWidget {
             child: Text(
               title,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.62),
+                color: AppColors.adaptiveTextSecondary(context),
                 fontSize: 13,
               ),
             ),
@@ -544,8 +565,8 @@ class OwnerProfileScreen extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -556,6 +577,7 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _actionTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -591,7 +613,9 @@ class OwnerProfileScreen extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isDanger ? Colors.redAccent : Colors.white,
+                      color: isDanger
+                          ? Colors.redAccent
+                          : AppColors.adaptiveTextPrimary(context),
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -600,7 +624,7 @@ class OwnerProfileScreen extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.58),
+                      color: AppColors.adaptiveTextSecondary(context),
                       fontSize: 12,
                     ),
                   ),
@@ -610,7 +634,7 @@ class OwnerProfileScreen extends StatelessWidget {
 
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withValues(alpha: 0.45),
+              color: AppColors.adaptiveTextTertiary(context),
               size: 16,
             ),
           ],
@@ -620,6 +644,7 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _circleGlassButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onTap,
   }) {
@@ -633,9 +658,18 @@ class OwnerProfileScreen extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.13),
+              color: AppColors.adaptiveSurface(context),
               shape: BoxShape.circle,
+<<<<<<< Updated upstream
               border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+=======
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.adaptiveTextPrimary(context),
+              size: 20,
+>>>>>>> Stashed changes
             ),
             child: Icon(icon, color: Colors.white, size: 20),
           ),
@@ -648,6 +682,7 @@ class OwnerProfileScreen extends StatelessWidget {
     required Widget child,
     EdgeInsets padding = const EdgeInsets.all(18),
   }) {
+<<<<<<< Updated upstream
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -659,15 +694,35 @@ class OwnerProfileScreen extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+=======
+    return Builder(
+      builder: (context) => ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            width: double.infinity,
+            padding: padding,
+            decoration: BoxDecoration(
+              color: AppColors.adaptiveSurface(context),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
+            ),
+            child: child,
+>>>>>>> Stashed changes
           ),
-          child: child,
         ),
       ),
     );
   }
 
+<<<<<<< Updated upstream
   Widget _divider() {
     return Divider(color: Colors.white.withValues(alpha: 0.12), height: 1);
+=======
+  Widget _divider(BuildContext context) {
+    return Divider(color: AppColors.adaptiveBorder(context), height: 1);
+>>>>>>> Stashed changes
   }
 
   Widget _buildLoginRequired(BuildContext context) {
@@ -678,16 +733,12 @@ class OwnerProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.login_rounded,
-                color: AppColors.accent,
-                size: 70,
-              ),
+              Icon(Icons.login_rounded, color: AppColors.accent, size: 70),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Login Required',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -696,7 +747,13 @@ class OwnerProfileScreen extends StatelessWidget {
               Text(
                 'Please login to view your owner profile.',
                 textAlign: TextAlign.center,
+<<<<<<< Updated upstream
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
+=======
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                ),
+>>>>>>> Stashed changes
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -709,9 +766,9 @@ class OwnerProfileScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.backgroundDark1,
+                  foregroundColor: AppColors.adaptiveTextPrimary(context),
                 ),
-                child: const Text('Go to Login'),
+                child: Text('Go to Login'),
               ),
             ],
           ),
@@ -725,17 +782,28 @@ class OwnerProfileScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundDark1,
+          backgroundColor: AppColors.adaptiveSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text(
+          title: Text(
             'Logout',
+<<<<<<< Updated upstream
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Text(
             'Are you sure you want to logout?',
             style: TextStyle(color: Colors.white.withValues(alpha: 0.72)),
+=======
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
+>>>>>>> Stashed changes
           ),
           actions: [
             TextButton(
@@ -744,7 +812,13 @@ class OwnerProfileScreen extends StatelessWidget {
               },
               child: Text(
                 'Cancel',
+<<<<<<< Updated upstream
                 style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
+=======
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                ),
+>>>>>>> Stashed changes
               ),
             ),
             TextButton(
@@ -752,7 +826,7 @@ class OwnerProfileScreen extends StatelessWidget {
                 Navigator.pop(dialogContext);
                 _logout(context);
               },
-              child: const Text(
+              child: Text(
                 'Logout',
                 style: TextStyle(
                   color: Colors.redAccent,

@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 import 'booking_screen.dart';
 import 'hotel_detail_screen.dart';
 import 'single_hotel_map_screen.dart';
@@ -157,6 +158,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       body: GestureDetector(
         onTap: _hideKeyboard,
         behavior: HitTestBehavior.translucent,
+<<<<<<< Updated upstream
         child: Stack(
           children: [
             Container(
@@ -241,14 +243,92 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                                 ),
                               ),
                           ],
+=======
+        child: AppBackground(
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _buildAppBar(),
+                _buildSearchAndFilter(),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _bookingsStream ?? _getBookingsStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return _buildLoadingState();
+                      }
+
+                      if (snapshot.hasError) {
+                        return _buildKeyboardSafeEmptyState(
+                          title: 'Error loading bookings',
+                          subtitle: 'Please check your connection.',
+                          icon: Icons.error_outline,
+                          showButton: false,
+>>>>>>> Stashed changes
                         );
-                      },
-                    ),
+                      }
+
+                      final docs = snapshot.data?.docs ?? [];
+                      final stats = _calculateStats(docs);
+                      final filteredDocs = _filterBookings(docs);
+
+                      return ListView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.only(
+                          bottom:
+                              120 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        children: [
+                          if (docs.isNotEmpty) _buildSummaryCards(stats),
+                          _buildTabs(),
+                          if (docs.isEmpty)
+                            _buildKeyboardSafeEmptyState(
+                              title: 'No bookings yet',
+                              subtitle: 'Start exploring luxury hotels.',
+                              icon: Icons.flight_takeoff,
+                            )
+                          else if (filteredDocs.isEmpty)
+                            _buildKeyboardSafeEmptyState(
+                              title: _searchQuery.isNotEmpty
+                                  ? 'No matching bookings'
+                                  : 'No $_selectedTab bookings',
+                              subtitle: _searchQuery.isNotEmpty
+                                  ? 'Try searching another hotel name, status, price, or booking ID.'
+                                  : "You don't have any $_selectedTab reservations.",
+                              icon: Icons.search_off,
+                              showButton: false,
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: Column(
+                                children: filteredDocs.map((doc) {
+                                  final data =
+                                      doc.data() as Map<String, dynamic>;
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: _PremiumBookingCard(
+                                      bookingData: data,
+                                      bookingId: doc.id,
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -264,9 +344,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.arrow_back_ios_new,
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   size: 18,
                 ),
                 onPressed: () {
@@ -286,15 +366,14 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'My Bookings',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.adaptiveTextPrimary(context),
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -303,7 +382,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: AppColors.adaptiveTextSecondary(context),
                     fontSize: 14,
                   ),
                 ),
@@ -322,7 +401,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: TextField(
           controller: _searchController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
           keyboardType: TextInputType.text,
           textInputAction: TextInputAction.search,
           onChanged: (value) {
@@ -332,16 +411,22 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           },
           decoration: InputDecoration(
             hintText: 'Search your bookings...',
+<<<<<<< Updated upstream
             hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+=======
+            hintStyle: TextStyle(
+              color: AppColors.adaptiveTextTertiary(context),
+            ),
+>>>>>>> Stashed changes
             icon: Icon(
               Icons.search,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: AppColors.adaptiveTextTertiary(context),
             ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close_rounded,
-                      color: Colors.white54,
+                      color: AppColors.adaptiveTextTertiary(context),
                     ),
                     onPressed: _clearSearch,
                   )
@@ -364,9 +449,20 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(16),
+<<<<<<< Updated upstream
             border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+=======
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.adaptiveShadow(context),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+>>>>>>> Stashed changes
           ),
           child: child,
         ),
@@ -409,9 +505,16 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: AppColors.adaptiveSurface(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.adaptiveShadow(context),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -423,7 +526,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             Text(
               title,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: AppColors.adaptiveTextSecondary(context),
                 fontSize: 13,
               ),
             ),
@@ -472,12 +575,12 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                         colors: [AppColors.primary, AppColors.secondary],
                       )
                     : null,
-                color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
+                color: isSelected ? null : AppColors.adaptiveSurface(context),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
                       ? Colors.transparent
-                      : Colors.white.withValues(alpha: 0.2),
+                      : AppColors.adaptiveBorder(context),
                 ),
                 boxShadow: isSelected
                     ? [
@@ -494,7 +597,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                   style: TextStyle(
                     color: isSelected
                         ? Colors.white
-                        : Colors.white.withValues(alpha: 0.7),
+                        : AppColors.adaptiveTextSecondary(context),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -518,15 +621,25 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+<<<<<<< Updated upstream
             Icon(icon, size: 70, color: Colors.white.withValues(alpha: 0.2)),
+=======
+            Icon(
+              icon,
+              size: 70,
+              color: AppColors.adaptiveTextTertiary(
+                context,
+              ).withValues(alpha: 0.45),
+            ),
+>>>>>>> Stashed changes
             const SizedBox(height: 18),
             Text(
               title,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontSize: 21,
                 fontWeight: FontWeight.bold,
               ),
@@ -536,7 +649,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.6),
+                color: AppColors.adaptiveTextSecondary(context),
                 fontSize: 14,
               ),
             ),
@@ -554,7 +667,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.backgroundDark1,
+                  foregroundColor: AppColors.isDark(context)
+                      ? AppColors.backgroundDark1
+                      : Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 16,
@@ -585,7 +700,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           margin: const EdgeInsets.only(bottom: 16),
           height: 160,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: AppColors.adaptiveSurfaceMuted(context),
             borderRadius: BorderRadius.circular(24),
           ),
         );
@@ -739,8 +854,12 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
+<<<<<<< Updated upstream
         builder: (context) =>
             SingleHotelMapScreen(hotel: hotelData, showRouteInitially: true),
+=======
+        builder: (context) => SingleHotelMapScreen(hotel: hotelData),
+>>>>>>> Stashed changes
       ),
     );
   }
@@ -765,24 +884,26 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundDark1,
+          backgroundColor: AppColors.adaptiveSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: const Text(
+          title: Text(
             'Cancel Booking',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
           ),
-          content: const Text(
+          content: Text(
             'Are you sure you want to cancel this booking request?',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text(
+              child: Text(
                 'Keep Booking',
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                ),
               ),
             ),
             TextButton(
@@ -843,15 +964,23 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     }
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(BuildContext context) {
     return Container(
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: AppColors.adaptiveSurfaceMuted(context),
         borderRadius: BorderRadius.circular(16),
       ),
+<<<<<<< Updated upstream
       child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
+=======
+      child: Icon(
+        Icons.hotel,
+        color: AppColors.adaptiveTextTertiary(context),
+        size: 32,
+      ),
+>>>>>>> Stashed changes
     );
   }
 
@@ -889,13 +1018,20 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: AppColors.adaptiveSurface(context),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: _isExpanded
                     ? statusColor.withValues(alpha: 0.5)
-                    : Colors.white.withValues(alpha: 0.15),
+                    : AppColors.adaptiveBorder(context),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.adaptiveShadow(context),
+                  blurRadius: AppColors.isDark(context) ? 24 : 32,
+                  offset: const Offset(0, 14),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -913,10 +1049,10 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                 height: 80,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return _buildImagePlaceholder();
+                                  return _buildImagePlaceholder(context);
                                 },
                               )
-                            : _buildImagePlaceholder(),
+                            : _buildImagePlaceholder(context),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -928,8 +1064,10 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                 Expanded(
                                   child: Text(
                                     hotelName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      color: AppColors.adaptiveTextPrimary(
+                                        context,
+                                      ),
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -968,7 +1106,9 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                               child: Text(
                                 '${_formatDate(widget.bookingData['checkInDate'])} - ${_formatDate(widget.bookingData['checkOutDate'])}',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.7),
+                                  color: AppColors.adaptiveTextSecondary(
+                                    context,
+                                  ),
                                   fontSize: 13,
                                 ),
                               ),
@@ -995,7 +1135,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                     child: Column(
                       children: [
                         Divider(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: AppColors.adaptiveBorder(context),
                           height: 24,
                         ),
                         _buildDetailRow('Booking ID', widget.bookingId),
@@ -1032,7 +1172,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 13,
             ),
           ),
@@ -1040,8 +1180,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -1061,7 +1201,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         child: ElevatedButton(
           onPressed: null,
           style: ElevatedButton.styleFrom(
-            disabledBackgroundColor: Colors.white.withValues(alpha: 0.10),
+            disabledBackgroundColor: AppColors.adaptiveSurfaceMuted(context),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1111,8 +1251,13 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             child: OutlinedButton(
               onPressed: _openDirections,
               style: OutlinedButton.styleFrom(
+<<<<<<< Updated upstream
                 side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                 foregroundColor: Colors.white,
+=======
+                side: BorderSide(color: AppColors.adaptiveBorder(context)),
+                foregroundColor: AppColors.adaptiveTextPrimary(context),
+>>>>>>> Stashed changes
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1130,7 +1275,9 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
               onPressed: _openHotelDetails,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
-                foregroundColor: AppColors.backgroundDark1,
+                foregroundColor: AppColors.isDark(context)
+                    ? AppColors.backgroundDark1
+                    : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1151,8 +1298,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         child: ElevatedButton(
           onPressed: _openBookingAgain,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white.withValues(alpha: 0.1),
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.adaptiveSurfaceMuted(context),
+            foregroundColor: AppColors.adaptiveTextPrimary(context),
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

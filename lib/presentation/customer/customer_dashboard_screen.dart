@@ -99,7 +99,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: AppColors.backgroundDark1,
+      backgroundColor: AppColors.adaptiveBackground(context),
       body: Stack(
         children: [
           // 1. THE INDEXED STACK (Holds all tabs in memory, shows only active one)
@@ -107,16 +107,20 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
             index: _bottomNavIndex,
             children: [
               _buildHomeTab(), // Index 0
-              HotelsMapScreen(onBackToHome: (){
-                setState(() {
-                  _bottomNavIndex=0;
-                });
-              },), // Index 1
-              CustomerBookingsScreen(onBackToHome: () {
+              HotelsMapScreen(
+                onBackToHome: () {
                   setState(() {
                     _bottomNavIndex = 0;
                   });
-                },), // Index 2
+                },
+              ), // Index 1
+              CustomerBookingsScreen(
+                onBackToHome: () {
+                  setState(() {
+                    _bottomNavIndex = 0;
+                  });
+                },
+              ), // Index 2
               ProfileScreen(
                 onBackToHome: () {
                   setState(() {
@@ -152,12 +156,12 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
   Widget _buildHomeTab() {
     return Stack(
       children: [
-        const DecoratedBox(
-          decoration: BoxDecoration(gradient: AppColors.darkGradient),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: AppColors.adaptiveBackgroundGradient(context),
+          ),
           child: SizedBox.expand(),
         ),
-
-       
 
         SafeArea(
           bottom: false,
@@ -172,7 +176,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                   stream: _hotelsStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
+                      return Center(
                         child: CircularProgressIndicator(
                           color: AppColors.accent,
                         ),
@@ -299,12 +303,12 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
           decoration: BoxDecoration(
             color: isMapTab
                 ? AppColors.backgroundDark1.withValues(alpha: 0.95)
-                : Colors.white.withValues(alpha: 0.10),
+                : AppColors.adaptiveSurface(context).withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
               color: isMapTab
-                  ? Colors.white.withValues(alpha: 0.10)
-                  : Colors.white.withValues(alpha: 0.20),
+                  ? AppColors.adaptiveBorder(context)
+                  : AppColors.adaptiveBorder(context),
               width: 1.5,
             ),
             boxShadow: isMapTab
@@ -358,14 +362,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               icon,
               color: isSelected
                   ? Colors.white
-                  : Colors.white.withValues(alpha: 0.50),
+                  : AppColors.adaptiveTextTertiary(context),
               size: 24,
             ),
             if (isSelected) ...[
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
@@ -398,17 +402,17 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    _bottomNavIndex=3;
+                    _bottomNavIndex = 3;
                   });
                 },
                 child: Container(
                   height: 52,
                   width: 52,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: AppColors.adaptiveSurfaceMuted(context),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.22),
+                      color: AppColors.adaptiveBorder(context),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -417,17 +421,17 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                           profileImage,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
+                            return Icon(
                               Icons.person_outline,
-                              color: Colors.white,
+                              color: AppColors.adaptiveTextPrimary(context),
                             );
                           },
                         )
-                      : const Icon(Icons.person_outline, color: Colors.white),
+                      : Icon(Icons.person_outline, color: Colors.white),
                 ),
               ),
 
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
 
               Expanded(
                 child: Column(
@@ -437,16 +441,16 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                       'Welcome back, $name',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
+                      style: TextStyle(
+                        color: AppColors.adaptiveTextSecondary(context),
                         fontSize: 13,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    const Text(
+                    SizedBox(height: 3),
+                    Text(
                       'Find your perfect stay',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.adaptiveTextPrimary(context),
                         fontSize: 23,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
@@ -471,23 +475,23 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         height: 58,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.10),
+          color: AppColors.adaptiveSurface(context),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          border: Border.all(color: AppColors.adaptiveBorder(context)),
         ),
         child: Row(
           children: [
             Icon(
               Icons.search_rounded,
-              color: Colors.white.withValues(alpha: 0.75),
+              color: AppColors.adaptiveTextSecondary(context),
             ),
 
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
 
             Expanded(
               child: TextField(
                 controller: searchController,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.adaptiveTextPrimary(context)),
                 onChanged: (value) {
                   _searchDebounce?.cancel();
 
@@ -505,7 +509,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search hotel or city...',
                   hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: AppColors.adaptiveTextTertiary(context),
                   ),
                   border: InputBorder.none,
                 ),
@@ -524,7 +528,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                 },
                 child: Icon(
                   Icons.close_rounded,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: AppColors.adaptiveTextSecondary(context),
                 ),
               ),
           ],
@@ -541,7 +545,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         padding: const EdgeInsets.fromLTRB(24, 18, 24, 4),
         scrollDirection: Axis.horizontal,
         itemCount: cities.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        separatorBuilder: (context, index) => SizedBox(width: 12),
         itemBuilder: (context, index) {
           final city = cities[index];
           final isSelected = selectedCity == city;
@@ -561,18 +565,20 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.accent
-                    : Colors.white.withValues(alpha: 0.10),
+                    : AppColors.adaptiveSurface(context),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.accent
-                      : Colors.white.withValues(alpha: 0.18),
+                      : AppColors.adaptiveBorder(context),
                 ),
               ),
               child: Text(
                 city,
                 style: TextStyle(
-                  color: isSelected ? AppColors.backgroundDark1 : Colors.white,
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.adaptiveTextPrimary(context),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -595,8 +601,8 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontSize: 21,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.4,
@@ -607,7 +613,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
             onTap: onTap,
             child: Text(
               actionText,
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.accent,
                 fontWeight: FontWeight.bold,
               ),
@@ -631,7 +637,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         scrollDirection: Axis.horizontal,
         cacheExtent: 600,
         itemCount: featuredHotels.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 14),
+        separatorBuilder: (context, index) => SizedBox(width: 14),
         itemBuilder: (context, index) {
           final doc = featuredHotels[index];
           final hotel = doc.data();
@@ -670,28 +676,30 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         child: Container(
           padding: const EdgeInsets.all(26),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 74, color: AppColors.accent),
-              const SizedBox(height: 18),
+              SizedBox(height: 18),
               Text(
                 title,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 subtitle,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -709,7 +717,6 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
     return double.tryParse(value.toString()) ?? 0.0;
   }
 }
-
 
 class _FeaturedGlassHotelCard extends StatelessWidget {
   final String imageUrl;
@@ -758,11 +765,7 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
                   height: 190,
                   width: 235,
                   color: Colors.white.withValues(alpha: 0.12),
-                  child: const Icon(
-                    Icons.hotel,
-                    color: Colors.white70,
-                    size: 60,
-                  ),
+                  child: Icon(Icons.hotel, color: Colors.white70, size: 60),
                 );
               },
             ),
@@ -796,15 +799,11 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 16,
-                      color: AppColors.accent,
-                    ),
-                    const SizedBox(width: 4),
+                    Icon(Icons.star_rounded, size: 16, color: AppColors.accent),
+                    SizedBox(width: 4),
                     Text(
                       rating.toStringAsFixed(1),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -825,36 +824,29 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Colors.white70,
-                        size: 15,
-                      ),
-                      const SizedBox(width: 4),
+                      Icon(Icons.location_on, color: Colors.white70, size: 15),
+                      SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           city,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 7),
+                  SizedBox(height: 7),
                   Text(
                     'Rs. ${price.toInt()} / night',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.accent,
                       fontWeight: FontWeight.bold,
                     ),

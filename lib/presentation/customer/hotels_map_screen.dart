@@ -53,6 +53,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
 
       // --- THE UPGRADE: Interactive Error Message ---
       if (!serviceEnabled) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Location services are turned off.'),
@@ -89,7 +90,9 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       final newLatLng = LatLng(position.latitude, position.longitude);
@@ -279,13 +282,22 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
             child: Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppColors.backgroundDark1.withValues(alpha: 0.94),
+                color: AppColors.adaptiveSurface(
+                  context,
+                ).withValues(alpha: 0.96),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(28),
                 ),
                 border: Border(
-                  top: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+                  top: BorderSide(color: AppColors.adaptiveBorder(context)),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.adaptiveShadow(context),
+                    blurRadius: 28,
+                    offset: const Offset(0, -10),
+                  ),
+                ],
               ),
               child: SafeArea(
                 top: false,
@@ -302,10 +314,10 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                           return Container(
                             height: 105,
                             width: 105,
-                            color: Colors.white.withValues(alpha: 0.10),
-                            child: const Icon(
+                            color: AppColors.adaptiveSurfaceMuted(context),
+                            child: Icon(
                               Icons.hotel,
-                              color: Colors.white70,
+                              color: AppColors.adaptiveTextTertiary(context),
                               size: 42,
                             ),
                           );
@@ -324,8 +336,8 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppColors.adaptiveTextPrimary(context),
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
@@ -345,7 +357,9 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                                 child: Text(
                                   city,
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.70),
+                                    color: AppColors.adaptiveTextSecondary(
+                                      context,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -364,8 +378,8 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 rating.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppColors.adaptiveTextPrimary(context),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -401,7 +415,9 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.accent,
-                                foregroundColor: AppColors.backgroundDark1,
+                                foregroundColor: AppColors.isDark(context)
+                                    ? AppColors.backgroundDark1
+                                    : Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -441,40 +457,53 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                 const SizedBox(height: 18),
 
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
-                    child: Stack(
-                      children: [
-                        FlutterMap(
-                          mapController: mapController,
-                          options: MapOptions(
-                            initialCenter: initialCenter,
-                            initialZoom: 11,
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate:
-                                  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                              subdomains: const ['a', 'b', 'c', 'd'],
-                              userAgentPackageName:
-                                  'com.example.hotelbookingapp',
-                            ),
-                            MarkerLayer(markers: markers),
-                          ],
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: AppColors.adaptiveBorder(context),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.adaptiveShadow(context),
+                          blurRadius: 32,
+                          offset: const Offset(0, 16),
                         ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Stack(
+                        children: [
+                          FlutterMap(
+                            mapController: mapController,
+                            options: MapOptions(
+                              initialCenter: initialCenter,
+                              initialZoom: 11,
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate:
+                                    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                                subdomains: const ['a', 'b', 'c', 'd'],
+                                userAgentPackageName:
+                                    'com.example.hotelbookingapp',
+                              ),
+                              MarkerLayer(markers: markers),
+                            ],
+                          ),
 
-                        if (isLoading)
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.20),
-                            child: const Center(
-                              child: CircularProgressIndicator(
-                                color: AppColors.accent,
+                          if (isLoading)
+                            Container(
+                              color: Colors.black.withValues(alpha: 0.20),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.accent,
+                                ),
                               ),
                             ),
-                          ),
-
-                        
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -490,34 +519,34 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
     return Row(
       children: [
         _circleGlassButton(
+          context: context,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () {
-            if (widget.onBackToHome!=null){
-              widget.onBackToHome!();
-            }else if(Navigator.canPop(context)){
-              Navigator.pop(context);
-            }
+            widget.onBackToHome();
           },
         ),
 
         const SizedBox(width: 14),
 
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Hotels Map',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 25,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              SizedBox(height: 3),
+              const SizedBox(height: 3),
               Text(
                 'Explore hotels by location',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(
+                  color: AppColors.adaptiveTextSecondary(context),
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -525,6 +554,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
 
         // NEW: Location Button with loading state
         _circleGlassButton(
+          context: context,
           icon: Icons.my_location_rounded,
           onTap: _getCurrentLocation,
           isLoading: isGettingLocation,
@@ -534,6 +564,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
   }
 
   Widget _circleGlassButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onTap,
     bool isLoading = false, // <-- Added loading state support
@@ -548,41 +579,30 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.13),
+              color: AppColors.adaptiveGlass(context),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+              border: Border.all(color: AppColors.adaptiveGlassBorder(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.adaptiveShadow(context),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: AppColors.adaptiveTextPrimary(context),
                       strokeWidth: 2,
                     ),
                   )
-                : Icon(icon, color: Colors.white, size: 20),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _mapButton({required IconData icon, required VoidCallback onTap}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(50),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            height: 46,
-            width: 46,
-            decoration: BoxDecoration(
-              color: AppColors.backgroundDark1.withValues(alpha: 0.88),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
-            ),
-            child: Icon(icon, color: AppColors.accent, size: 21),
+                : Icon(
+                    icon,
+                    color: AppColors.adaptiveTextPrimary(context),
+                    size: 20,
+                  ),
           ),
         ),
       ),

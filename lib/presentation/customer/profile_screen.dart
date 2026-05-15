@@ -13,22 +13,14 @@ class ProfileScreen extends StatelessWidget {
   final VoidCallback? onBackToHome;
   final VoidCallback? onOpenBookings;
 
-  const ProfileScreen({
-    super.key,
-    this.onBackToHome,
-    this.onOpenBookings,
-  });
+  const ProfileScreen({super.key, this.onBackToHome, this.onOpenBookings});
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
 
     if (!context.mounted) return;
 
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-      (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userStream() {
@@ -62,9 +54,8 @@ class ProfileScreen extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EditProfileScreen(
-            userData: userDoc.data() ?? {},
-          ),
+          builder: (context) =>
+              EditProfileScreen(userData: userDoc.data() ?? {}),
         ),
       );
     } catch (e) {
@@ -97,10 +88,10 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       _buildTopBar(context),
                       const SizedBox(height: 26),
-                      const Text(
+                      Text(
                         'My Profile',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.adaptiveTextPrimary(context),
                           fontSize: 30,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
@@ -110,7 +101,7 @@ class ProfileScreen extends StatelessWidget {
                       Text(
                         'Manage your account and booking activity.',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.70),
+                          color: AppColors.adaptiveTextSecondary(context),
                           fontSize: 14,
                         ),
                       ),
@@ -132,43 +123,44 @@ class ProfileScreen extends StatelessWidget {
 
                           if (snapshot.hasError) {
                             return _glassCard(
-                              child: const Text(
+                              child: Text(
                                 'Could not load profile data.',
-                                style: TextStyle(color: Colors.white),
+                                style: TextStyle(
+                                  color: AppColors.adaptiveTextPrimary(context),
+                                ),
                               ),
                             );
                           }
 
                           final userData = snapshot.data?.data() ?? {};
 
-                          final String name =
-                              userData['name'] ?? 'Guest User';
+                          final String name = userData['name'] ?? 'Guest User';
 
-                          final String email = userData['email'] ??
+                          final String email =
+                              userData['email'] ??
                               currentUser.email ??
                               'No email';
 
-                          final String phone =
-                              userData['phone'] ?? 'Not added';
+                          final String phone = userData['phone'] ?? 'Not added';
 
-                          final String role =
-                              userData['role'] ?? 'customer';
+                          final String role = userData['role'] ?? 'customer';
 
-                          final String? profileImage =
-                              userData['profileImage'];
+                          final String? profileImage = userData['profileImage'];
 
                           return Column(
                             children: [
                               _buildProfileHeader(
+                                context: context,
                                 name: name,
                                 email: email,
                                 role: role,
                                 profileImage: profileImage,
                               ),
                               const SizedBox(height: 20),
-                              _buildStatsCard(),
+                              _buildStatsCard(context),
                               const SizedBox(height: 20),
                               _buildInfoCard(
+                                context: context,
                                 name: name,
                                 email: email,
                                 phone: phone,
@@ -192,6 +184,7 @@ class ProfileScreen extends StatelessWidget {
     return Row(
       children: [
         _circleGlassButton(
+          context: context,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () {
             if (onBackToHome != null) {
@@ -203,6 +196,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         const Spacer(),
         _circleGlassButton(
+          context: context,
           icon: Icons.edit_outlined,
           onTap: () => _openEditProfile(context),
         ),
@@ -211,6 +205,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildProfileHeader({
+    required BuildContext context,
     required String name,
     required String email,
     required String role,
@@ -227,10 +222,7 @@ class ProfileScreen extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: profileImage == null || profileImage.isEmpty
                   ? const LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.secondary,
-                      ],
+                      colors: [AppColors.primary, AppColors.secondary],
                     )
                   : null,
               image: profileImage != null && profileImage.isNotEmpty
@@ -240,7 +232,7 @@ class ProfileScreen extends StatelessWidget {
                     )
                   : null,
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.28),
+                color: AppColors.adaptiveBorder(context),
                 width: 2,
               ),
               boxShadow: [
@@ -252,19 +244,15 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
             child: profileImage == null || profileImage.isEmpty
-                ? const Icon(
-                    Icons.person_rounded,
-                    color: Colors.white,
-                    size: 46,
-                  )
+                ? Icon(Icons.person_rounded, color: Colors.white, size: 46)
                 : null,
           ),
           const SizedBox(height: 16),
           Text(
             name,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
               fontSize: 23,
               fontWeight: FontWeight.w800,
             ),
@@ -274,16 +262,13 @@ class ProfileScreen extends StatelessWidget {
             email,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.68),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 13,
             ),
           ),
           const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.accent.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(22),
@@ -293,7 +278,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: Text(
               role.toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.accent,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -306,7 +291,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsCard() {
+  Widget _buildStatsCard(BuildContext parentContext) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _bookingsStream(),
       builder: (context, snapshot) {
@@ -337,6 +322,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Total',
                 value: totalBookings.toString(),
                 icon: Icons.bookmark_rounded,
+                context: context,
               ),
             ),
             const SizedBox(width: 12),
@@ -345,6 +331,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Pending',
                 value: pendingBookings.toString(),
                 icon: Icons.pending_actions_rounded,
+                context: context,
               ),
             ),
             const SizedBox(width: 12),
@@ -353,6 +340,7 @@ class ProfileScreen extends StatelessWidget {
                 title: 'Accepted',
                 value: acceptedBookings.toString(),
                 icon: Icons.check_circle_rounded,
+                context: context,
               ),
             ),
           ],
@@ -365,21 +353,18 @@ class ProfileScreen extends StatelessWidget {
     required String title,
     required String value,
     required IconData icon,
+    required BuildContext context,
   }) {
     return _glassCard(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: AppColors.accent,
-            size: 24,
-          ),
+          Icon(icon, color: AppColors.accent, size: 24),
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
               fontSize: 21,
               fontWeight: FontWeight.w800,
             ),
@@ -388,7 +373,7 @@ class ProfileScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.62),
+              color: AppColors.adaptiveTextSecondary(context),
               fontSize: 12,
             ),
           ),
@@ -398,6 +383,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildInfoCard({
+    required BuildContext context,
     required String name,
     required String email,
     required String phone,
@@ -407,24 +393,28 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         children: [
           _profileInfoRow(
+            context: context,
             icon: Icons.person_outline_rounded,
             title: 'Full Name',
             value: name,
           ),
-          _divider(),
+          _divider(context),
           _profileInfoRow(
+            context: context,
             icon: Icons.email_outlined,
             title: 'Email',
             value: email,
           ),
-          _divider(),
+          _divider(context),
           _profileInfoRow(
+            context: context,
             icon: Icons.phone_outlined,
             title: 'Phone',
             value: phone,
           ),
-          _divider(),
+          _divider(context),
           _profileInfoRow(
+            context: context,
             icon: Icons.verified_user_outlined,
             title: 'Role',
             value: role,
@@ -439,6 +429,7 @@ class ProfileScreen extends StatelessWidget {
       child: Column(
         children: [
           _actionTile(
+            context: context,
             icon: Icons.bookmark_border_rounded,
             title: 'My Bookings',
             subtitle: 'View booking status',
@@ -455,15 +446,17 @@ class ProfileScreen extends StatelessWidget {
               }
             },
           ),
-          _divider(),
+          _divider(context),
           _actionTile(
+            context: context,
             icon: Icons.help_outline_rounded,
             title: 'Help & Support',
             subtitle: 'Contact hotel booking support',
             onTap: () => _showSupportDialog(context),
           ),
-          _divider(),
+          _divider(context),
           _actionTile(
+            context: context,
             icon: Icons.logout_rounded,
             title: 'Logout',
             subtitle: 'Sign out from your account',
@@ -476,6 +469,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _profileInfoRow({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String value,
@@ -484,17 +478,13 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 13),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: AppColors.accent,
-            size: 22,
-          ),
+          Icon(icon, color: AppColors.accent, size: 22),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               title,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.62),
+                color: AppColors.adaptiveTextSecondary(context),
                 fontSize: 13,
               ),
             ),
@@ -504,8 +494,8 @@ class ProfileScreen extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -516,6 +506,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _actionTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -537,15 +528,9 @@ class ProfileScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: color.withValues(alpha: 0.35),
-                ),
+                border: Border.all(color: color.withValues(alpha: 0.35)),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 22,
-              ),
+              child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -555,7 +540,9 @@ class ProfileScreen extends StatelessWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isDanger ? Colors.redAccent : Colors.white,
+                      color: isDanger
+                          ? Colors.redAccent
+                          : AppColors.adaptiveTextPrimary(context),
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -564,7 +551,7 @@ class ProfileScreen extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.58),
+                      color: AppColors.adaptiveTextSecondary(context),
                       fontSize: 12,
                     ),
                   ),
@@ -573,7 +560,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withValues(alpha: 0.45),
+              color: AppColors.adaptiveTextTertiary(context),
               size: 16,
             ),
           ],
@@ -583,6 +570,7 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _circleGlassButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onTap,
   }) {
@@ -596,15 +584,13 @@ class ProfileScreen extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.13),
+              color: AppColors.adaptiveSurface(context),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
             ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               size: 20,
             ),
           ),
@@ -617,31 +603,28 @@ class ProfileScreen extends StatelessWidget {
     required Widget child,
     EdgeInsets padding = const EdgeInsets.all(18),
   }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          width: double.infinity,
-          padding: padding,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
+    return Builder(
+      builder: (context) => ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Container(
+            width: double.infinity,
+            padding: padding,
+            decoration: BoxDecoration(
+              color: AppColors.adaptiveSurface(context),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
             ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );
   }
 
-  Widget _divider() {
-    return Divider(
-      color: Colors.white.withValues(alpha: 0.12),
-      height: 1,
-    );
+  Widget _divider(BuildContext context) {
+    return Divider(color: AppColors.adaptiveBorder(context), height: 1);
   }
 
   Widget _buildLoginRequired(BuildContext context) {
@@ -652,16 +635,12 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.login_rounded,
-                color: AppColors.accent,
-                size: 70,
-              ),
+              Icon(Icons.login_rounded, color: AppColors.accent, size: 70),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Login Required',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -671,7 +650,7 @@ class ProfileScreen extends StatelessWidget {
                 'Please login to view your profile.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.70),
+                  color: AppColors.adaptiveTextSecondary(context),
                 ),
               ),
               const SizedBox(height: 20),
@@ -685,9 +664,9 @@ class ProfileScreen extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.backgroundDark1,
+                  foregroundColor: AppColors.adaptiveTextPrimary(context),
                 ),
-                child: const Text('Go to Login'),
+                child: Text('Go to Login'),
               ),
             ],
           ),
@@ -701,21 +680,18 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundDark1,
+          backgroundColor: AppColors.adaptiveSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Row(
+          title: Row(
             children: [
-              Icon(
-                Icons.support_agent_rounded,
-                color: AppColors.accent,
-              ),
+              Icon(Icons.support_agent_rounded, color: AppColors.accent),
               SizedBox(width: 10),
               Text(
                 'Help & Support',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -728,14 +704,14 @@ class ProfileScreen extends StatelessWidget {
               Text(
                 'For support, please contact the developers:',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.72),
+                  color: AppColors.adaptiveTextSecondary(context),
                   fontSize: 14,
                 ),
               ),
               const SizedBox(height: 18),
-              _developerRow('Muhammad Talha'),
+              _developerRow(context, 'Muhammad Talha'),
               const SizedBox(height: 12),
-              _developerRow('Muhammad Zain Ul Abidin'),
+              _developerRow(context, 'Muhammad Zain Ul Abidin'),
             ],
           ),
           actions: [
@@ -743,7 +719,7 @@ class ProfileScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(dialogContext);
               },
-              child: const Text(
+              child: Text(
                 'Close',
                 style: TextStyle(
                   color: AppColors.accent,
@@ -757,7 +733,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _developerRow(String name) {
+  Widget _developerRow(BuildContext context, String name) {
     return Row(
       children: [
         Container(
@@ -766,22 +742,16 @@ class ProfileScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.accent.withValues(alpha: 0.14),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.accent.withValues(alpha: 0.35),
-            ),
+            border: Border.all(color: AppColors.accent.withValues(alpha: 0.35)),
           ),
-          child: const Icon(
-            Icons.code_rounded,
-            color: AppColors.accent,
-            size: 20,
-          ),
+          child: Icon(Icons.code_rounded, color: AppColors.accent, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             name,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.adaptiveTextPrimary(context),
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -796,22 +766,20 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundDark1,
+          backgroundColor: AppColors.adaptiveSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text(
+          title: Text(
             'Logout',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.72),
-            ),
+            style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
           ),
           actions: [
             TextButton(
@@ -821,7 +789,7 @@ class ProfileScreen extends StatelessWidget {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.70),
+                  color: AppColors.adaptiveTextSecondary(context),
                 ),
               ),
             ),
@@ -830,7 +798,7 @@ class ProfileScreen extends StatelessWidget {
                 Navigator.pop(dialogContext);
                 _logout(context);
               },
-              child: const Text(
+              child: Text(
                 'Logout',
                 style: TextStyle(
                   color: Colors.redAccent,

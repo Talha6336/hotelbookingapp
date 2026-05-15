@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
+import '../../core/theme/app_theme.dart';
 import 'notification_service.dart';
 import 'notifications_screen.dart';
 
@@ -13,10 +13,7 @@ class NotificationButton extends StatelessWidget {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     if (uid == null) {
-      return _buildButton(
-        onTap: () {},
-        unreadCount: 0,
-      );
+      return _buildButton(context: context, onTap: () {}, unreadCount: 0);
     }
 
     return StreamBuilder<int>(
@@ -25,6 +22,7 @@ class NotificationButton extends StatelessWidget {
         final unreadCount = snapshot.data ?? 0;
 
         return _buildButton(
+          context: context,
           unreadCount: unreadCount,
           onTap: () {
             Navigator.push(
@@ -40,6 +38,7 @@ class NotificationButton extends StatelessWidget {
   }
 
   Widget _buildButton({
+    required BuildContext context,
     required VoidCallback onTap,
     required int unreadCount,
   }) {
@@ -50,17 +49,15 @@ class NotificationButton extends StatelessWidget {
           height: 46,
           width: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
+            color: AppColors.adaptiveSurface(context),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.22),
-            ),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
           ),
           child: IconButton(
             onPressed: onTap,
-            icon: const Icon(
+            icon: Icon(
               Icons.notifications_none_rounded,
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
             ),
           ),
         ),
@@ -71,18 +68,15 @@ class NotificationButton extends StatelessWidget {
             top: -2,
             child: Container(
               padding: const EdgeInsets.all(5),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.red,
                 shape: BoxShape.circle,
               ),
-              constraints: const BoxConstraints(
-                minWidth: 20,
-                minHeight: 20,
-              ),
+              constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
               child: Text(
                 unreadCount > 9 ? '9+' : unreadCount.toString(),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,

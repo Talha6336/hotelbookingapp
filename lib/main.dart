@@ -27,7 +27,7 @@ void main() async {
 }
 
 class StayEaseApp extends StatelessWidget {
-  const StayEaseApp({Key? key}) : super(key: key);
+  const StayEaseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +36,8 @@ class StayEaseApp extends StatelessWidget {
       debugShowCheckedModeBanner:
           false, // Removes the debug banner for a premium feel
       theme: AppTheme.lightTheme, // Applies our global typography and colors
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
       // Setup the routing engine
       initialRoute: '/',
       routes: {
