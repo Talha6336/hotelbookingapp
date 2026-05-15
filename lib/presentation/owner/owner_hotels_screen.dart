@@ -17,8 +17,6 @@ class OwnerHotelsScreen extends StatefulWidget {
 
 class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
     with TickerProviderStateMixin {
-  late AnimationController _floatingController;
-
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -28,10 +26,6 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
   @override
   void initState() {
     super.initState();
-    _floatingController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat(reverse: true);
 
     // Initialize the stream only ONCE when the screen loads
     _hotelsStream = _getMyHotelsStream();
@@ -39,7 +33,6 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
 
   @override
   void dispose() {
-    _floatingController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -84,29 +77,6 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
           // 1. Luxury Gradient Background
           Container(
             decoration: const BoxDecoration(gradient: AppColors.darkGradient),
-          ),
-
-          // 2. Animated Floating Circles
-          AnimatedBuilder(
-            animation: _floatingController,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  _buildFloatingCircle(
-                    size: 300,
-                    top: -100,
-                    left: -50,
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                  ),
-                  _buildFloatingCircle(
-                    size: 400,
-                    bottom: 100,
-                    right: -150,
-                    color: AppColors.secondary.withValues(alpha: 0.2),
-                  ),
-                ],
-              );
-            },
           ),
 
           // 3. Main Content
@@ -315,7 +285,9 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                 },
                 decoration: InputDecoration(
                   hintText: "Search your hotels...",
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  hintStyle: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
                   icon: Icon(
                     Icons.search,
                     color: Colors.white.withValues(alpha: 0.5),
@@ -500,32 +472,6 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
       ],
     );
   }
-
-  Widget _buildFloatingCircle({
-    required double size,
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required Color color,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ===========================================================================
@@ -604,7 +550,9 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: status == 'Active'
                                 ? const Color(0xFF4CAF50).withValues(alpha: 0.9)
-                                : const Color(0xFFFF9800).withValues(alpha: 0.9),
+                                : const Color(
+                                    0xFFFF9800,
+                                  ).withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(

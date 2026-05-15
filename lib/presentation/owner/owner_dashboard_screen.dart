@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../notifications/notification_button.dart';
 
-
 import 'add_hotel_screen.dart';
 import 'owner_bookings_screen.dart';
 import 'owner_profile_screen.dart';
@@ -24,7 +23,6 @@ class OwnerDashboardScreen extends StatefulWidget {
 
 class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
     with TickerProviderStateMixin {
-  late AnimationController _floatingController;
   late AnimationController _entranceController;
 
   int _bottomNavIndex = 0;
@@ -32,11 +30,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
   @override
   void initState() {
     super.initState();
-
-    _floatingController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat(reverse: true);
 
     _entranceController = AnimationController(
       vsync: this,
@@ -46,7 +39,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
 
   @override
   void dispose() {
-    _floatingController.dispose();
     _entranceController.dispose();
     super.dispose();
   }
@@ -190,30 +182,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
         // Background & Circles specific to the dashboard
         Container(
           decoration: const BoxDecoration(gradient: AppColors.darkGradient),
-        ),
-        AnimatedBuilder(
-          animation: _floatingController,
-          builder: (context, child) {
-            return Stack(
-              children: [
-                _buildFloatingCircle(
-                  size: 300,
-                  top:
-                      -100 +
-                      (math.sin(_floatingController.value * math.pi) * 40),
-                  left: -100,
-                  color: AppColors.primary.withValues(alpha: 0.25),
-                ),
-                _buildFloatingCircle(
-                  size: 400,
-                  bottom:
-                      50 + (math.cos(_floatingController.value * math.pi) * 50),
-                  right: -150,
-                  color: AppColors.secondary.withValues(alpha: 0.2),
-                ),
-              ],
-            );
-          },
         ),
 
         // Main Dashboard Content
@@ -842,7 +810,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+              color: isSelected
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.5),
               size: 24,
             ),
             if (isSelected) ...[
@@ -903,23 +873,14 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
               decoration: BoxDecoration(
                 gradient: isGradient
                     ? const LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          AppColors.secondary,
-                        ],
+                        colors: [AppColors.primary, AppColors.secondary],
                       )
                     : null,
                 color: isGradient ? null : Colors.white.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: iconSize,
-              ),
+              child: Icon(icon, color: Colors.white, size: iconSize),
             ),
           ),
         ),
@@ -937,32 +898,6 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen>
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildFloatingCircle({
-    required double size,
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required Color color,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-        ),
-      ),
     );
   }
 
@@ -1038,8 +973,8 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
     try {
       final String customerId =
           widget.bookingData['customerId']?.toString() ??
-              widget.bookingData['userId']?.toString() ??
-              '';
+          widget.bookingData['userId']?.toString() ??
+          '';
 
       final String hotelId = widget.bookingData['hotelId']?.toString() ?? '';
       final String hotelName =
@@ -1053,9 +988,9 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
           .collection('bookings')
           .doc(widget.bookingId)
           .update({
-        'status': newStatus,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+            'status': newStatus,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1162,7 +1097,9 @@ class _OwnerBookingCardState extends State<_OwnerBookingCard> {
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: statusColor.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
                       status,

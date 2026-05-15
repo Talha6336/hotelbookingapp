@@ -20,13 +20,15 @@ class SignupScreen extends StatefulWidget {
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMixin {
+class _SignupScreenState extends State<SignupScreen>
+    with TickerProviderStateMixin {
   // Form Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   // State Variables
   bool _isLoading = false;
@@ -36,7 +38,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
 
   // Animations
   late AnimationController _entryController;
-  late AnimationController _floatingController;
+
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
@@ -48,10 +50,6 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
 
   void _setupAnimations() {
     // Background floating animation
-    _floatingController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat(reverse: true);
 
     // Entry staggered animations
     _entryController = AnimationController(
@@ -60,12 +58,19 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     );
 
     _fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entryController, curve: const Interval(0.2, 1.0, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _entryController,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+      ),
     );
 
-    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-      CurvedAnimation(parent: _entryController, curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic)),
-    );
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _entryController,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _entryController.forward();
   }
@@ -73,7 +78,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
   @override
   void dispose() {
     _entryController.dispose();
-    _floatingController.dispose();
+
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -84,8 +89,8 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
 
   Future<void> _handleSignup() async {
     // 1. Basic Validation
-    if (_nameController.text.trim().isEmpty || 
-        _emailController.text.trim().isEmpty || 
+    if (_nameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty) {
       _showSnackBar("Please fill in all required fields.");
       return;
@@ -100,10 +105,11 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
 
     try {
       // 2. Create User in Firebase Auth
-      final UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       final User? user = userCredential.user;
 
@@ -164,34 +170,16 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
           ),
 
           // 2. Animated Floating Glassmorphism Circles
-          AnimatedBuilder(
-            animation: _floatingController,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  _buildFloatingCircle(
-                    size: 250,
-                    top: -50 + (math.sin(_floatingController.value * math.pi) * 30),
-                    left: -80,
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  ),
-                  _buildFloatingCircle(
-                    size: 300,
-                    bottom: -100 + (math.cos(_floatingController.value * math.pi) * 40),
-                    right: -50,
-                    color: AppColors.secondary.withValues(alpha: 0.2),
-                  ),
-                ],
-              );
-            },
-          ),
 
           // 3. Scrollable Main Content
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 20.0,
+                ),
                 child: FadeTransition(
                   opacity: _fadeAnim,
                   child: SlideTransition(
@@ -230,7 +218,11 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
-            child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -267,7 +259,10 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1.5),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.1),
@@ -279,29 +274,81 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTextField(controller: _nameController, hintText: "Full Name", icon: Icons.person_outline),
+              _buildTextField(
+                controller: _nameController,
+                hintText: "Full Name",
+                icon: Icons.person_outline,
+              ),
               const SizedBox(height: 16),
-              _buildTextField(controller: _emailController, hintText: "Email Address", icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+              _buildTextField(
+                controller: _emailController,
+                hintText: "Email Address",
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+              ),
               const SizedBox(height: 16),
-              _buildTextField(controller: _phoneController, hintText: "Phone Number", icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+              _buildTextField(
+                controller: _phoneController,
+                hintText: "Phone Number",
+                icon: Icons.phone_outlined,
+                keyboardType: TextInputType.phone,
+              ),
               const SizedBox(height: 16),
-              _buildTextField(controller: _passwordController, hintText: "Password", icon: Icons.lock_outline, isPassword: true, isPasswordVisible: _isPasswordVisible, onVisibilityToggle: () => setState(() => _isPasswordVisible = !_isPasswordVisible)),
+              _buildTextField(
+                controller: _passwordController,
+                hintText: "Password",
+                icon: Icons.lock_outline,
+                isPassword: true,
+                isPasswordVisible: _isPasswordVisible,
+                onVisibilityToggle: () =>
+                    setState(() => _isPasswordVisible = !_isPasswordVisible),
+              ),
               const SizedBox(height: 16),
-              _buildTextField(controller: _confirmPasswordController, hintText: "Confirm Password", icon: Icons.lock_reset_outlined, isPassword: true, isPasswordVisible: _isConfirmPasswordVisible, onVisibilityToggle: () => setState(() => _isConfirmPasswordVisible = !_isConfirmPasswordVisible)),
-              
+              _buildTextField(
+                controller: _confirmPasswordController,
+                hintText: "Confirm Password",
+                icon: Icons.lock_reset_outlined,
+                isPassword: true,
+                isPasswordVisible: _isConfirmPasswordVisible,
+                onVisibilityToggle: () => setState(
+                  () => _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                ),
+              ),
+
               const SizedBox(height: 28),
-              Text("I am a:", style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(
+                "I am a:",
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
               const SizedBox(height: 12),
-              
+
               // Animated Role Selection Cards
               Row(
                 children: [
-                  Expanded(child: _buildRoleCard(role: 'customer', title: "Customer", subtitle: "Book hotels", icon: Icons.luggage)),
+                  Expanded(
+                    child: _buildRoleCard(
+                      role: 'customer',
+                      title: "Customer",
+                      subtitle: "Book hotels",
+                      icon: Icons.luggage,
+                    ),
+                  ),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildRoleCard(role: 'owner', title: "Hotel Owner", subtitle: "Manage stays", icon: Icons.domain)),
+                  Expanded(
+                    child: _buildRoleCard(
+                      role: 'owner',
+                      title: "Hotel Owner",
+                      subtitle: "Manage stays",
+                      icon: Icons.domain,
+                    ),
+                  ),
                 ],
               ),
-              
+
               const SizedBox(height: 32),
               _buildSubmitButton(),
             ],
@@ -311,9 +358,14 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     );
   }
 
-  Widget _buildRoleCard({required String role, required String title, required String subtitle, required IconData icon}) {
+  Widget _buildRoleCard({
+    required String role,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
     final isSelected = _selectedRole == role;
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedRole = role),
       child: AnimatedContainer(
@@ -321,28 +373,67 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.05),
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.05),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.accent : Colors.white.withValues(alpha: 0.1),
+            color: isSelected
+                ? AppColors.accent
+                : Colors.white.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.2), blurRadius: 15)] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.accent.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                  ),
+                ]
+              : [],
         ),
         child: Column(
           children: [
-            Icon(icon, color: isSelected ? AppColors.accent : Colors.white.withValues(alpha: 0.6), size: 32),
+            Icon(
+              icon,
+              color: isSelected
+                  ? AppColors.accent
+                  : Colors.white.withValues(alpha: 0.6),
+              size: 32,
+            ),
             const SizedBox(height: 8),
-            Text(title, style: TextStyle(color: Colors.white, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 14)),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 14,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(subtitle, textAlign: TextAlign.center, style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 10)),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.6),
+                fontSize: 10,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTextField({required TextEditingController controller, required String hintText, required IconData icon, bool isPassword = false, bool isPasswordVisible = false, VoidCallback? onVisibilityToggle, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    bool isPassword = false,
+    bool isPasswordVisible = false,
+    VoidCallback? onVisibilityToggle,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return TextFormField(
       controller: controller,
       obscureText: isPassword && !isPasswordVisible,
@@ -352,11 +443,27 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
-        suffixIcon: isPassword ? IconButton(icon: Icon(isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.white.withValues(alpha: 0.7)), onPressed: onVisibilityToggle) : null,
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  isPasswordVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+                onPressed: onVisibilityToggle,
+              )
+            : null,
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.1),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+        ),
         contentPadding: const EdgeInsets.symmetric(vertical: 18),
       ),
     );
@@ -368,9 +475,17 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
       height: 56,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [AppColors.primary, AppColors.secondary]),
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, AppColors.secondary],
+          ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.4), blurRadius: 15, offset: const Offset(0, 5))],
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: ElevatedButton(
           onPressed: _isLoading ? null : _handleSignup,
@@ -378,11 +493,28 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
             backgroundColor: Colors.transparent,
             disabledBackgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
           child: _isLoading
-              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-              : const Text("Create Account", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : const Text(
+                  "Create Account",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
         ),
       ),
     );
@@ -392,24 +524,25 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("Already have an account? ", style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14)),
+        Text(
+          "Already have an account? ",
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 14,
+          ),
+        ),
         GestureDetector(
           onTap: () => Navigator.pushReplacementNamed(context, '/login'),
-          child: const Text("Login", style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 14)),
+          child: const Text(
+            "Login",
+            style: TextStyle(
+              color: AppColors.accent,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
         ),
       ],
-    );
-  }
-
-  Widget _buildFloatingCircle({required double size, double? top, double? bottom, double? left, double? right, required Color color}) {
-    return Positioned(
-      top: top, bottom: bottom, left: left, right: right,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(width: size, height: size, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
-        ),
-      ),
     );
   }
 }

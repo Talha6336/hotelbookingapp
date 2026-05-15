@@ -17,8 +17,6 @@ class CustomerBookingsScreen extends StatefulWidget {
 
 class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     with TickerProviderStateMixin {
-  late AnimationController _floatingController;
-
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -39,16 +37,10 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
   @override
   void initState() {
     super.initState();
-
-    _floatingController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 12),
-    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    _floatingController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -104,7 +96,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
     };
   }
 
-  List<QueryDocumentSnapshot> _filterBookings(List<QueryDocumentSnapshot> docs) {
+  List<QueryDocumentSnapshot> _filterBookings(
+    List<QueryDocumentSnapshot> docs,
+  ) {
     final query = _searchQuery.trim().toLowerCase();
     final selectedTab = _selectedTab.toLowerCase();
 
@@ -127,8 +121,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       }
 
       final hotelName = (data['hotelName'] ?? '').toString().toLowerCase();
-      final customerName =
-          (data['customerName'] ?? '').toString().toLowerCase();
+      final customerName = (data['customerName'] ?? '')
+          .toString()
+          .toLowerCase();
       final totalPrice = (data['totalPrice'] ?? '').toString().toLowerCase();
       final totalNights = (data['totalNights'] ?? '').toString().toLowerCase();
       final bookingStatus = (data['status'] ?? '').toString().toLowerCase();
@@ -186,33 +181,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.darkGradient,
-            ),
-          ),
-
-          AnimatedBuilder(
-            animation: _floatingController,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  _buildFloatingCircle(
-                    size: 250,
-                    top: -50 +
-                        (math.sin(_floatingController.value * math.pi) * 30),
-                    left: -50,
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  ),
-                  _buildFloatingCircle(
-                    size: 300,
-                    bottom: 100 +
-                        (math.cos(_floatingController.value * math.pi) * 40),
-                    right: -100,
-                    color: AppColors.secondary.withValues(alpha: 0.2),
-                  ),
-                ],
-              );
-            },
+            decoration: const BoxDecoration(gradient: AppColors.darkGradient),
           ),
 
           SafeArea(
@@ -239,23 +208,15 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 return CustomScrollView(
                   physics: const BouncingScrollPhysics(),
                   slivers: [
-                    SliverToBoxAdapter(
-                      child: _buildAppBar(),
-                    ),
+                    SliverToBoxAdapter(child: _buildAppBar()),
 
                     if (_showSearch)
-                      SliverToBoxAdapter(
-                        child: _buildSearchBar(),
-                      ),
+                      SliverToBoxAdapter(child: _buildSearchBar()),
 
                     if (docs.isNotEmpty)
-                      SliverToBoxAdapter(
-                        child: _buildSummaryCards(stats),
-                      ),
+                      SliverToBoxAdapter(child: _buildSummaryCards(stats)),
 
-                    SliverToBoxAdapter(
-                      child: _buildTabs(),
-                    ),
+                    SliverToBoxAdapter(child: _buildTabs()),
 
                     if (docs.isEmpty)
                       SliverFillRemaining(
@@ -286,21 +247,22 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                           right: 20,
                         ),
                         sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final data = filteredDocs[index].data()
-                                  as Map<String, dynamic>;
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final data =
+                                filteredDocs[index].data()
+                                    as Map<String, dynamic>;
 
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: _PremiumBookingCard(
-                                  bookingData: data,
-                                  bookingId: filteredDocs[index].id,
-                                ),
-                              );
-                            },
-                            childCount: filteredDocs.length,
-                          ),
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _PremiumBookingCard(
+                                bookingData: data,
+                                bookingId: filteredDocs[index].id,
+                              ),
+                            );
+                          }, childCount: filteredDocs.length),
                         ),
                       ),
                   ],
@@ -388,9 +350,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.20),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
             ),
             child: Row(
               children: [
@@ -453,11 +413,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildStatCard(
-            'Total',
-            stats['Total'] ?? 0,
-            const Color(0xFF2196F3),
-          ),
+          _buildStatCard('Total', stats['Total'] ?? 0, const Color(0xFF2196F3)),
           _buildStatCard(
             'Pending',
             stats['Pending'] ?? 0,
@@ -486,9 +442,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -540,17 +494,11 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? const LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          AppColors.secondary,
-                        ],
+                        colors: [AppColors.primary, AppColors.secondary],
                       )
                     : null,
                 color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
@@ -598,44 +546,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
           ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFloatingCircle({
-    required double size,
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required Color color,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-            ),
-          ),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
       ),
     );
@@ -653,11 +566,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 80,
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
+            Icon(icon, size: 80, color: Colors.white.withValues(alpha: 0.2)),
             const SizedBox(height: 20),
             Text(
               title,
@@ -696,9 +605,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 ),
                 child: const Text(
                   'Explore Hotels',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -781,24 +688,18 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           ),
           title: const Text(
             'Cancel Booking',
-            style: TextStyle(
-              color: Colors.white,
-            ),
+            style: TextStyle(color: Colors.white),
           ),
           content: const Text(
             'Are you sure you want to cancel this booking request?',
-            style: TextStyle(
-              color: Colors.white70,
-            ),
+            style: TextStyle(color: Colors.white70),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text(
                 'Keep Booking',
-                style: TextStyle(
-                  color: Colors.white54,
-                ),
+                style: TextStyle(color: Colors.white54),
               ),
             ),
             TextButton(
@@ -827,9 +728,9 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           .collection('bookings')
           .doc(widget.bookingId)
           .update({
-        'status': 'cancelled',
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+            'status': 'cancelled',
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
 
       if (!mounted) return;
 
@@ -867,11 +768,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(
-        Icons.hotel,
-        color: Colors.white54,
-        size: 32,
-      ),
+      child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
     );
   }
 
@@ -883,8 +780,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     final String status = rawStatus.toUpperCase();
     final Color statusColor = _getStatusColor(rawStatus);
 
-    final String hotelName =
-        widget.bookingData['hotelName'] ?? 'Luxury Hotel';
+    final String hotelName = widget.bookingData['hotelName'] ?? 'Luxury Hotel';
 
     final String hotelImage =
         widget.bookingData['hotelImage'] ??
@@ -1017,10 +913,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                 ),
 
                 AnimatedCrossFade(
-                  firstChild: const SizedBox(
-                    width: double.infinity,
-                    height: 0,
-                  ),
+                  firstChild: const SizedBox(width: double.infinity, height: 0),
                   secondChild: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Column(
@@ -1029,18 +922,12 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                           color: Colors.white.withValues(alpha: 0.1),
                           height: 24,
                         ),
-                        _buildDetailRow(
-                          'Booking ID',
-                          widget.bookingId,
-                        ),
+                        _buildDetailRow('Booking ID', widget.bookingId),
                         _buildDetailRow(
                           'Guest Name',
                           widget.bookingData['customerName'] ?? 'N/A',
                         ),
-                        _buildDetailRow(
-                          'Payment Status',
-                          'Pay at Hotel',
-                        ),
+                        _buildDetailRow('Payment Status', 'Pay at Hotel'),
                         const SizedBox(height: 16),
                         _buildActionButtons(rawStatus),
                       ],
@@ -1124,9 +1011,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             child: OutlinedButton(
               onPressed: () {},
               style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -1152,9 +1037,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
               ),
               child: const Text(
                 'View Details',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

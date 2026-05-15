@@ -43,8 +43,8 @@ class _AddHotelScreenState extends State<AddHotelScreen>
   LatLng? _selectedLocation;
   final LatLng _initialMapCenter = const LatLng(31.4187, 73.0791); // Faisalabad
 
-  // Animations
-  late AnimationController _floatingController;
+ 
+ 
 
   // Data Sources
   final List<String> _categories = [
@@ -71,15 +71,12 @@ class _AddHotelScreenState extends State<AddHotelScreen>
   @override
   void initState() {
     super.initState();
-    _floatingController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat(reverse: true);
+   
   }
 
   @override
   void dispose() {
-    _floatingController.dispose();
+
     _nameController.dispose();
     _descController.dispose();
     _addressController.dispose();
@@ -174,27 +171,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           Container(
             decoration: const BoxDecoration(gradient: AppColors.darkGradient),
           ),
-          AnimatedBuilder(
-            animation: _floatingController,
-            builder: (context, child) {
-              return Stack(
-                children: [
-                  _buildFloatingCircle(
-                    size: 300,
-                    top: -100,
-                    left: -100,
-                    color: AppColors.primary.withValues(alpha: 0.2),
-                  ),
-                  _buildFloatingCircle(
-                    size: 400,
-                    bottom: -50,
-                    right: -150,
-                    color: AppColors.secondary.withValues(alpha: 0.15),
-                  ),
-                ],
-              );
-            },
-          ),
+         
           SafeArea(
             child: Column(
               children: [
@@ -789,29 +766,4 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     );
   }
 
-  Widget _buildFloatingCircle({
-    required double size,
-    double? top,
-    double? bottom,
-    double? left,
-    double? right,
-    required Color color,
-  }) {
-    return Positioned(
-      top: top,
-      bottom: bottom,
-      left: left,
-      right: right,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-        ),
-      ),
-    );
-  }
-}
+  
