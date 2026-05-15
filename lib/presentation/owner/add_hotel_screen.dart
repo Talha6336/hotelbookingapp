@@ -11,6 +11,7 @@ import 'package:latlong2/latlong.dart';
 
 // Internal Imports
 import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 import '../widgets/app_image_picker.dart';
 
 class AddHotelScreen extends StatefulWidget {
@@ -70,6 +71,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     {'name': 'Room Service', 'icon': Icons.room_service_rounded},
   ];
 
+  bool _isDark(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -106,7 +111,6 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         _mapController.move(location, zoom);
         _pendingMoveLocation = null;
       } catch (_) {
-        // Do not show any error here.
         // Sometimes flutter_map controller becomes ready a little late.
       }
     });
@@ -173,10 +177,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         return;
       }
 
-      final LatLng userLocation = LatLng(
-        position.latitude,
-        position.longitude,
-      );
+      final LatLng userLocation = LatLng(position.latitude, position.longitude);
 
       if (!mounted) return;
 
@@ -192,10 +193,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     } catch (_) {
       if (!mounted) return;
 
-      _showSnackBar(
-        "Cannot get your location.",
-        isError: true,
-      );
+      _showSnackBar("Cannot get your location.", isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -292,10 +290,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(color: Colors.white),
-        ),
+        content: Text(message, style: const TextStyle(color: Colors.white)),
         backgroundColor: isError ? Colors.redAccent : Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
@@ -306,55 +301,48 @@ class _AddHotelScreenState extends State<AddHotelScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.darkGradient,
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                _buildAppBar(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionTitle("Hotel Images"),
-                          _buildImageUploadSection(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle("Basic Information"),
-                          _buildDetailsForm(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle("Category"),
-                          _buildCategorySelection(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle("Amenities"),
-                          _buildAmenitiesSelection(),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle("Location"),
-                          _buildInteractiveMap(),
-                          const SizedBox(height: 32),
-                          _buildSaveButton(),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionTitle("Hotel Images"),
+                        _buildImageUploadSection(),
+                        const SizedBox(height: 24),
+                        _buildSectionTitle("Basic Information"),
+                        _buildDetailsForm(),
+                        const SizedBox(height: 24),
+                        _buildSectionTitle("Category"),
+                        _buildCategorySelection(),
+                        const SizedBox(height: 24),
+                        _buildSectionTitle("Amenities"),
+                        _buildAmenitiesSelection(),
+                        const SizedBox(height: 24),
+                        _buildSectionTitle("Location"),
+                        _buildInteractiveMap(),
+                        const SizedBox(height: 32),
+                        _buildSaveButton(),
+                        const SizedBox(height: 40),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -366,12 +354,19 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: AppColors.adaptiveSurface(context),
             border: Border(
-              bottom: BorderSide(
-                color: Colors.white.withValues(alpha: 0.1),
-              ),
+              bottom: BorderSide(color: AppColors.adaptiveBorder(context)),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: _isDark(context) ? 0.20 : 0.05,
+                ),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -380,18 +375,21 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: AppColors.adaptiveSurface(context),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.adaptiveBorder(context),
+                    ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white,
+                    color: AppColors.adaptiveTextPrimary(context),
                     size: 18,
                   ),
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -400,7 +398,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.adaptiveTextPrimary(context),
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -410,16 +408,16 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white54,
+                        color: AppColors.adaptiveTextSecondary(context),
                         fontSize: 12,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.help_outline_rounded,
-                color: Colors.white70,
+                color: AppColors.adaptiveTextSecondary(context),
               ),
             ],
           ),
@@ -464,8 +462,8 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                           },
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.55),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -585,10 +583,11 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       controller: controller,
       maxLines: maxLines,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: AppColors.adaptiveTextPrimary(context),
         fontSize: 14,
       ),
+      cursorColor: AppColors.accent,
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return "Required";
@@ -598,26 +597,33 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       },
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(
-          color: Colors.white.withValues(alpha: 0.5),
-        ),
-        prefixIcon: Icon(
-          icon,
-          color: AppColors.accent,
-          size: 20,
-        ),
+        hintStyle: TextStyle(color: AppColors.adaptiveTextTertiary(context)),
+        prefixIcon: Icon(icon, color: AppColors.accent, size: 20),
         filled: true,
-        fillColor: Colors.black.withValues(alpha: 0.2),
+        fillColor: AppColors.adaptiveSurface(context),
+        errorStyle: const TextStyle(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.w600,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
+          borderSide: BorderSide(color: AppColors.adaptiveBorder(context)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.adaptiveBorder(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(
-            color: AppColors.accent,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 16,
@@ -644,39 +650,44 @@ class _AddHotelScreenState extends State<AddHotelScreen>
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 gradient: isSelected
                     ? const LinearGradient(
-                        colors: [
-                          AppColors.primary,
-                          AppColors.secondary,
-                        ],
+                        colors: [AppColors.primary, AppColors.secondary],
                       )
                     : null,
-                color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
+                color: isSelected ? null : AppColors.adaptiveSurface(context),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
                       ? Colors.transparent
-                      : Colors.white.withValues(alpha: 0.2),
+                      : AppColors.adaptiveBorder(context),
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 10,
+                          color: AppColors.primary.withValues(alpha: 0.30),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
                         ),
                       ]
-                    : [],
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: _isDark(context) ? 0.18 : 0.05,
+                          ),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
               ),
               child: Text(
                 category,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white70,
+                  color: isSelected
+                      ? Colors.white
+                      : AppColors.adaptiveTextPrimary(context),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 ),
               ),
@@ -709,19 +720,16 @@ class _AddHotelScreenState extends State<AddHotelScreen>
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.accent.withValues(alpha: 0.2)
-                    : Colors.white.withValues(alpha: 0.05),
+                    ? AppColors.accent.withValues(alpha: 0.18)
+                    : AppColors.adaptiveSurface(context),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.accent
-                      : Colors.white.withValues(alpha: 0.1),
+                      : AppColors.adaptiveBorder(context),
                 ),
               ),
               child: Row(
@@ -729,17 +737,22 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                 children: [
                   Icon(
                     amenity['icon'],
-                    color: isSelected ? AppColors.accent : Colors.white54,
+                    color: isSelected
+                        ? AppColors.accent
+                        : AppColors.adaptiveTextSecondary(context),
                     size: 16,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     amenityName,
                     style: TextStyle(
-                      color: isSelected ? AppColors.accent : Colors.white70,
+                      color: isSelected
+                          ? AppColors.accent
+                          : AppColors.adaptiveTextPrimary(context),
                       fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
                     ),
                   ),
                 ],
@@ -837,11 +850,16 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                     horizontal: 14,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundDark1.withValues(alpha: 0.88),
+                    color: AppColors.adaptiveSurface(context),
                     borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.adaptiveBorder(context),
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: Colors.black.withValues(
+                          alpha: _isDark(context) ? 0.22 : 0.10,
+                        ),
                         blurRadius: 10,
                       ),
                     ],
@@ -853,7 +871,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                             ? Icons.touch_app
                             : Icons.check_circle,
                         color: _selectedLocation == null
-                            ? Colors.white70
+                            ? AppColors.adaptiveTextSecondary(context)
                             : AppColors.accent,
                         size: 18,
                       ),
@@ -865,8 +883,8 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                               : "Lat: ${_selectedLocation!.latitude.toStringAsFixed(4)}, Lng: ${_selectedLocation!.longitude.toStringAsFixed(4)}",
                           style: TextStyle(
                             color: _selectedLocation == null
-                                ? Colors.white70
-                                : Colors.white,
+                                ? AppColors.adaptiveTextSecondary(context)
+                                : AppColors.adaptiveTextPrimary(context),
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -920,23 +938,22 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(30),
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: isPrimary
               ? AppColors.accent
-              : AppColors.backgroundDark1.withValues(alpha: 0.90),
+              : AppColors.adaptiveSurface(context),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: isPrimary
                 ? AppColors.accent
-                : Colors.white.withValues(alpha: 0.20),
+                : AppColors.adaptiveBorder(context),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.22),
+              color: Colors.black.withValues(
+                alpha: _isDark(context) ? 0.22 : 0.10,
+              ),
               blurRadius: 10,
             ),
           ],
@@ -946,14 +963,18 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           children: [
             Icon(
               icon,
-              color: isPrimary ? AppColors.backgroundDark1 : Colors.white,
+              color: isPrimary
+                  ? Colors.white
+                  : AppColors.adaptiveTextPrimary(context),
               size: 18,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isPrimary ? AppColors.backgroundDark1 : Colors.white,
+                color: isPrimary
+                    ? Colors.white
+                    : AppColors.adaptiveTextPrimary(context),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -971,15 +992,12 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              AppColors.primary,
-              AppColors.secondary,
-            ],
+            colors: [AppColors.primary, AppColors.secondary],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.4),
+              color: AppColors.primary.withValues(alpha: 0.35),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -991,6 +1009,8 @@ class _AddHotelScreenState extends State<AddHotelScreen>
             backgroundColor: Colors.transparent,
             disabledBackgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            disabledForegroundColor: Colors.white70,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -1022,8 +1042,8 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: AppColors.adaptiveTextPrimary(context),
           fontSize: 18,
           fontWeight: FontWeight.bold,
           letterSpacing: -0.5,
@@ -1032,10 +1052,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
     );
   }
 
-  Widget _glassCard({
-    required Widget child,
-    required EdgeInsets padding,
-  }) {
+  Widget _glassCard({required Widget child, required EdgeInsets padding}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -1044,11 +1061,18 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-            ),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: _isDark(context) ? 0.22 : 0.06,
+                ),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: child,
         ),

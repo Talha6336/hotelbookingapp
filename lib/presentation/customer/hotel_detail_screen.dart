@@ -2,6 +2,7 @@ import 'booking_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 import 'single_hotel_map_screen.dart';
 
 class HotelDetailScreen extends StatelessWidget {
@@ -92,6 +93,10 @@ class HotelDetailScreen extends StatelessWidget {
     return Icons.check_circle_outline_rounded;
   }
 
+  bool _isDark(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
   @override
   Widget build(BuildContext context) {
     final String imageUrl = hotel['imageUrl'] ?? '';
@@ -106,106 +111,90 @@ class HotelDetailScreen extends StatelessWidget {
     final List<String> amenities = _getAmenitiesList(hotel['amenities']);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark1,
-      body: Stack(
-        children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: AppColors.darkGradient,
-            ),
-            child: SizedBox.expand(),
-          ),
-
-          SafeArea(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              cacheExtent: 700,
-              slivers: [
-                SliverToBoxAdapter(
-                  child: RepaintBoundary(
-                    child: _buildImageHeader(
-                      context: context,
-                      imageUrl: imageUrl,
-                      rating: rating,
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Stack(
+          children: [
+            SafeArea(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                cacheExtent: 700,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: RepaintBoundary(
+                      child: _buildImageHeader(
+                        context: context,
+                        imageUrl: imageUrl,
+                        rating: rating,
+                      ),
                     ),
                   ),
-                ),
-
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHotelTitle(
-                          name: name,
-                          city: city,
-                          price: price,
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        _buildInfoCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildInfoRow(
-                                icon: Icons.location_on_outlined,
-                                title: 'Address',
-                                value: address,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildInfoRow(
-                                icon: Icons.location_city_outlined,
-                                title: 'City',
-                                value: city,
-                              ),
-                            ],
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHotelTitle(
+                            context: context,
+                            name: name,
+                            city: city,
+                            price: price,
                           ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _buildSectionTitle('Description'),
-                        const SizedBox(height: 10),
-
-                        _buildInfoCard(
-                          child: Text(
-                            description,
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: 14,
-                              height: 1.6,
+                          const SizedBox(height: 18),
+                          _buildInfoCard(
+                            context: context,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildInfoRow(
+                                  context: context,
+                                  icon: Icons.location_on_outlined,
+                                  title: 'Address',
+                                  value: address,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildInfoRow(
+                                  context: context,
+                                  icon: Icons.location_city_outlined,
+                                  title: 'City',
+                                  value: city,
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _buildSectionTitle('Location'),
-                        const SizedBox(height: 10),
-
-                        _buildMapPreview(context),
-
-                        const SizedBox(height: 20),
-
-                        _buildSectionTitle('Amenities'),
-                        const SizedBox(height: 10),
-
-                        _buildFacilities(amenities),
-                      ],
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(context, 'Description'),
+                          const SizedBox(height: 10),
+                          _buildInfoCard(
+                            context: context,
+                            child: Text(
+                              description,
+                              style: TextStyle(
+                                color: AppColors.adaptiveTextSecondary(context),
+                                fontSize: 14,
+                                height: 1.6,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(context, 'Location'),
+                          const SizedBox(height: 10),
+                          _buildMapPreview(context),
+                          const SizedBox(height: 20),
+                          _buildSectionTitle(context, 'Amenities'),
+                          const SizedBox(height: 10),
+                          _buildFacilities(context, amenities),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          _buildBottomBookingBar(
-            context: context,
-            price: price,
-          ),
-        ],
+            _buildBottomBookingBar(context: context, price: price),
+          ],
+        ),
       ),
     );
   }
@@ -215,6 +204,8 @@ class HotelDetailScreen extends StatelessWidget {
     required String imageUrl,
     required double rating,
   }) {
+    final bool isDark = _isDark(context);
+
     return Stack(
       children: [
         ClipRRect(
@@ -231,17 +222,16 @@ class HotelDetailScreen extends StatelessWidget {
               return Container(
                 height: 330,
                 width: double.infinity,
-                color: Colors.white.withValues(alpha: 0.10),
-                child: const Icon(
-                  Icons.hotel,
+                color: AppColors.adaptiveSurface(context),
+                child: Icon(
+                  Icons.hotel_rounded,
                   size: 80,
-                  color: Colors.white70,
+                  color: AppColors.adaptiveTextTertiary(context),
                 ),
               );
             },
           ),
         ),
-
         Container(
           height: 330,
           decoration: BoxDecoration(
@@ -252,41 +242,33 @@ class HotelDetailScreen extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withValues(alpha: 0.35),
+                Colors.black.withValues(alpha: isDark ? 0.45 : 0.28),
                 Colors.transparent,
-                Colors.black.withValues(alpha: 0.75),
+                Colors.black.withValues(alpha: isDark ? 0.75 : 0.55),
               ],
             ),
           ),
         ),
-
         Positioned(
           top: 18,
           left: 18,
           child: _circleButton(
+            context: context,
             icon: Icons.arrow_back_ios_new_rounded,
             onTap: () {
               Navigator.pop(context);
             },
           ),
         ),
-
-        
-
         Positioned(
           bottom: 22,
           right: 22,
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 9,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.38),
+              color: Colors.black.withValues(alpha: 0.40),
               borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.25),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -313,6 +295,7 @@ class HotelDetailScreen extends StatelessWidget {
   }
 
   Widget _circleButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onTap,
   }) {
@@ -325,20 +308,15 @@ class HotelDetailScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.35),
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.25),
-          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
 
   Widget _buildHotelTitle({
+    required BuildContext context,
     required String name,
     required String city,
     required double price,
@@ -352,8 +330,8 @@ class HotelDetailScreen extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.5,
@@ -372,7 +350,7 @@ class HotelDetailScreen extends StatelessWidget {
                     child: Text(
                       city,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.75),
+                        color: AppColors.adaptiveTextSecondary(context),
                         fontSize: 14,
                       ),
                     ),
@@ -382,9 +360,7 @@ class HotelDetailScreen extends StatelessWidget {
             ],
           ),
         ),
-
         const SizedBox(width: 12),
-
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -399,7 +375,7 @@ class HotelDetailScreen extends StatelessWidget {
             Text(
               '/ night',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: AppColors.adaptiveTextSecondary(context),
                 fontSize: 13,
               ),
             ),
@@ -409,22 +385,33 @@ class HotelDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard({required Widget child}) {
+  Widget _buildInfoCard({
+    required BuildContext context,
+    required Widget child,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.10),
+        color: AppColors.adaptiveSurface(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.20),
-        ),
+        border: Border.all(color: AppColors.adaptiveBorder(context)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(
+              alpha: _isDark(context) ? 0.20 : 0.06,
+            ),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: child,
     );
   }
 
   Widget _buildInfoRow({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String value,
@@ -432,11 +419,7 @@ class HotelDetailScreen extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          color: AppColors.accent,
-          size: 22,
-        ),
+        Icon(icon, color: AppColors.accent, size: 22),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -445,15 +428,15 @@ class HotelDetailScreen extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: AppColors.adaptiveTextSecondary(context),
                   fontSize: 12,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 value,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.adaptiveTextPrimary(context),
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -465,11 +448,11 @@ class HotelDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: AppColors.adaptiveTextPrimary(context),
         fontSize: 20,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.3,
@@ -479,14 +462,13 @@ class HotelDetailScreen extends StatelessWidget {
 
   Widget _buildMapPreview(BuildContext context) {
     return _buildInfoCard(
+      context: context,
       child: Container(
         height: 150,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          color: Colors.white.withValues(alpha: 0.08),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
+          color: AppColors.adaptiveSurface(context),
+          border: Border.all(color: AppColors.adaptiveBorder(context)),
         ),
         child: Stack(
           children: [
@@ -494,19 +476,16 @@ class HotelDetailScreen extends StatelessWidget {
               child: Icon(
                 Icons.map_outlined,
                 size: 72,
-                color: Colors.white.withValues(alpha: 0.25),
+                color: AppColors.adaptiveTextTertiary(context),
               ),
             ),
-
             Center(
               child: GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SingleHotelMapScreen(
-                        hotel: hotel,
-                      ),
+                      builder: (context) => SingleHotelMapScreen(hotel: hotel),
                     ),
                   );
                 },
@@ -522,16 +501,12 @@ class HotelDetailScreen extends StatelessWidget {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        color: AppColors.backgroundDark1,
-                        size: 18,
-                      ),
+                      Icon(Icons.location_on, color: Colors.white, size: 18),
                       SizedBox(width: 6),
                       Text(
                         'View on Map',
                         style: TextStyle(
-                          color: AppColors.backgroundDark1,
+                          color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -546,43 +521,49 @@ class HotelDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFacilities(List<String> amenities) {
+  Widget _buildFacilities(BuildContext context, List<String> amenities) {
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: amenities.map((amenity) {
-        return Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 12,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.18),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _getAmenityIcon(amenity),
-                color: AppColors.accent,
-                size: 18,
+      children: amenities
+          .map((amenity) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.adaptiveSurface(context),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.adaptiveBorder(context)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(
+                      alpha: _isDark(context) ? 0.18 : 0.05,
+                    ),
+                    blurRadius: 14,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                amenity,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getAmenityIcon(amenity),
+                    color: AppColors.accent,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    amenity,
+                    style: TextStyle(
+                      color: AppColors.adaptiveTextPrimary(context),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
-      }).toList(growable: false),
+            );
+          })
+          .toList(growable: false),
     );
   }
 
@@ -597,15 +578,20 @@ class HotelDetailScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDark1.withValues(alpha: 0.96),
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(26),
-          ),
+          color: AppColors.adaptiveSurface(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
           border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: 0.18),
-            ),
+            top: BorderSide(color: AppColors.adaptiveBorder(context)),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(
+                alpha: _isDark(context) ? 0.35 : 0.10,
+              ),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -624,7 +610,7 @@ class HotelDetailScreen extends StatelessWidget {
                     TextSpan(
                       text: '\nTotal per night',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: AppColors.adaptiveTextSecondary(context),
                         fontSize: 12,
                       ),
                     ),
@@ -632,9 +618,7 @@ class HotelDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(width: 16),
-
             SizedBox(
               height: 54,
               child: ElevatedButton(
@@ -642,26 +626,23 @@ class HotelDetailScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => BookingScreen(
-                        hotelId: hotelId,
-                        hotel: hotel,
-                      ),
+                      builder: (context) =>
+                          BookingScreen(hotelId: hotelId, hotel: hotel),
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.backgroundDark1,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
+                  elevation: 0,
                 ),
                 child: const Text(
                   'Book Now',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),

@@ -5,17 +5,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../widgets/app_background.dart';
 import '../notifications/notification_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final String hotelId;
   final Map<String, dynamic> hotel;
 
-  const BookingScreen({
-    super.key,
-    required this.hotelId,
-    required this.hotel,
-  });
+  const BookingScreen({super.key, required this.hotelId, required this.hotel});
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -32,6 +29,10 @@ class _BookingScreenState extends State<BookingScreen> {
     if (value is double) return value;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  bool _isDark(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
   }
 
   int get totalNights {
@@ -99,13 +100,23 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _datePickerTheme(BuildContext context, Widget? child) {
+    final isDark = _isDark(context);
+
     return Theme(
       data: Theme.of(context).copyWith(
-        colorScheme: const ColorScheme.light(
-          primary: AppColors.primary,
-          onPrimary: Colors.white,
-          onSurface: AppColors.textPrimary,
-        ),
+        colorScheme: isDark
+            ? const ColorScheme.dark(
+                primary: AppColors.primary,
+                onPrimary: Colors.white,
+                surface: AppColors.backgroundDark1,
+                onSurface: Colors.white,
+              )
+            : const ColorScheme.light(
+                primary: AppColors.primary,
+                onPrimary: Colors.white,
+                surface: Colors.white,
+                onSurface: AppColors.textPrimary,
+              ),
       ),
       child: child!,
     );
@@ -155,22 +166,23 @@ class _BookingScreenState extends State<BookingScreen> {
 
       final String hotelName = widget.hotel['name'] ?? 'Unknown Hotel';
 
-      final bookingRef =
-          await FirebaseFirestore.instance.collection('bookings').add({
-        'userId': currentUser.uid,
-        'customerId': currentUser.uid,
-        'ownerId': ownerId,
-        'hotelId': widget.hotelId,
-        'hotelName': hotelName,
-        'hotelImage': widget.hotel['imageUrl'] ?? '',
-        'customerName': customerName,
-        'checkInDate': Timestamp.fromDate(checkInDate!),
-        'checkOutDate': Timestamp.fromDate(checkOutDate!),
-        'totalNights': totalNights,
-        'totalPrice': totalPrice,
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      final bookingRef = await FirebaseFirestore.instance
+          .collection('bookings')
+          .add({
+            'userId': currentUser.uid,
+            'customerId': currentUser.uid,
+            'ownerId': ownerId,
+            'hotelId': widget.hotelId,
+            'hotelName': hotelName,
+            'hotelImage': widget.hotel['imageUrl'] ?? '',
+            'customerName': customerName,
+            'checkInDate': Timestamp.fromDate(checkInDate!),
+            'checkOutDate': Timestamp.fromDate(checkOutDate!),
+            'totalNights': totalNights,
+            'totalPrice': totalPrice,
+            'status': 'pending',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
 
       await NotificationService.notifyOwnerNewBooking(
         ownerId: ownerId,
@@ -198,29 +210,27 @@ class _BookingScreenState extends State<BookingScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: AppColors.backgroundDark1,
+          backgroundColor: AppColors.adaptiveSurface(context),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(22),
           ),
-          title: const Text(
+          title: Text(
             'Booking Requested',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Your booking request has been sent to the hotel owner. Status: pending.',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
-            ),
+            style: TextStyle(color: AppColors.adaptiveTextSecondary(context)),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 Navigator.pop(context);
               },
               child: const Text(
@@ -255,101 +265,88 @@ class _BookingScreenState extends State<BookingScreen> {
     final double pricePerNight = _toDouble(widget.hotel['pricePerNight']);
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.darkGradient,
-            ),
-          ),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(22, 18, 22, 110),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTopBar(context),
-                  const SizedBox(height: 22),
-
-                  const Text(
-                    'Confirm Booking',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Text(
-                    'Select your stay dates and send request to hotel owner.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.70),
-                      fontSize: 14,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _buildHotelSummaryCard(
-                    imageUrl: imageUrl,
-                    hotelName: hotelName,
-                    city: city,
-                    pricePerNight: pricePerNight,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle('Stay Dates'),
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDateCard(
-                          title: 'Check-in',
-                          value: _formatDate(checkInDate),
-                          icon: Icons.login_rounded,
-                          onTap: _pickCheckInDate,
-                        ),
+      backgroundColor: Colors.transparent,
+      body: AppBackground(
+        child: Stack(
+          children: [
+            SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(22, 18, 22, 120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildTopBar(context),
+                    const SizedBox(height: 22),
+                    Text(
+                      'Confirm Booking',
+                      style: TextStyle(
+                        color: AppColors.adaptiveTextPrimary(context),
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _buildDateCard(
-                          title: 'Check-out',
-                          value: _formatDate(checkOutDate),
-                          icon: Icons.logout_rounded,
-                          onTap: _pickCheckOutDate,
-                        ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Select your stay dates and send request to hotel owner.',
+                      style: TextStyle(
+                        color: AppColors.adaptiveTextSecondary(context),
+                        fontSize: 14,
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle('Payment Summary'),
-                  const SizedBox(height: 12),
-
-                  _buildPriceSummary(
-                    pricePerNight: pricePerNight,
-                    nights: totalNights,
-                    total: totalPrice,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  _buildNoteBox(),
-                ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildHotelSummaryCard(
+                      context: context,
+                      imageUrl: imageUrl,
+                      hotelName: hotelName,
+                      city: city,
+                      pricePerNight: pricePerNight,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle(context, 'Stay Dates'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildDateCard(
+                            context: context,
+                            title: 'Check-in',
+                            value: _formatDate(checkInDate),
+                            icon: Icons.login_rounded,
+                            onTap: _pickCheckInDate,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: _buildDateCard(
+                            context: context,
+                            title: 'Check-out',
+                            value: _formatDate(checkOutDate),
+                            icon: Icons.logout_rounded,
+                            onTap: _pickCheckOutDate,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle(context, 'Payment Summary'),
+                    const SizedBox(height: 12),
+                    _buildPriceSummary(
+                      context: context,
+                      pricePerNight: pricePerNight,
+                      nights: totalNights,
+                      total: totalPrice,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildNoteBox(context),
+                  ],
+                ),
               ),
             ),
-          ),
-
-          _buildBottomButton(),
-        ],
+            _buildBottomButton(context),
+          ],
+        ),
       ),
     );
   }
@@ -358,11 +355,13 @@ class _BookingScreenState extends State<BookingScreen> {
     return Row(
       children: [
         _circleGlassButton(
+          context: context,
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () => Navigator.pop(context),
         ),
         const Spacer(),
         _circleGlassButton(
+          context: context,
           icon: Icons.bookmark_border_rounded,
           onTap: () {},
         ),
@@ -371,6 +370,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _circleGlassButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onTap,
   }) {
@@ -380,19 +380,27 @@ class _BookingScreenState extends State<BookingScreen> {
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: InkWell(
           onTap: onTap,
+          borderRadius: BorderRadius.circular(50),
           child: Container(
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.13),
+              color: AppColors.adaptiveSurface(context),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: AppColors.adaptiveBorder(context)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: _isDark(context) ? 0.22 : 0.06,
+                  ),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Icon(
               icon,
-              color: Colors.white,
+              color: AppColors.adaptiveTextPrimary(context),
               size: 20,
             ),
           ),
@@ -402,12 +410,14 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildHotelSummaryCard({
+    required BuildContext context,
     required String imageUrl,
     required String hotelName,
     required String city,
     required double pricePerNight,
   }) {
     return _glassCard(
+      context: context,
       child: Row(
         children: [
           ClipRRect(
@@ -421,19 +431,17 @@ class _BookingScreenState extends State<BookingScreen> {
                 return Container(
                   height: 105,
                   width: 105,
-                  color: Colors.white.withValues(alpha: 0.10),
-                  child: const Icon(
-                    Icons.hotel,
-                    color: Colors.white70,
+                  color: AppColors.adaptiveSurface(context),
+                  child: Icon(
+                    Icons.hotel_rounded,
+                    color: AppColors.adaptiveTextTertiary(context),
                     size: 42,
                   ),
                 );
               },
             ),
           ),
-
           const SizedBox(width: 14),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,15 +450,13 @@ class _BookingScreenState extends State<BookingScreen> {
                   hotelName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.adaptiveTextPrimary(context),
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
                 Row(
                   children: [
                     const Icon(
@@ -463,16 +469,14 @@ class _BookingScreenState extends State<BookingScreen> {
                       child: Text(
                         city,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.70),
+                          color: AppColors.adaptiveTextSecondary(context),
                           fontSize: 13,
                         ),
                       ),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 10),
-
                 Text(
                   'Rs. ${pricePerNight.toInt()} / night',
                   style: const TextStyle(
@@ -489,11 +493,11 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: AppColors.adaptiveTextPrimary(context),
         fontSize: 20,
         fontWeight: FontWeight.w800,
       ),
@@ -501,6 +505,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildDateCard({
+    required BuildContext context,
     required String title,
     required String value,
     required IconData icon,
@@ -509,28 +514,25 @@ class _BookingScreenState extends State<BookingScreen> {
     return GestureDetector(
       onTap: onTap,
       child: _glassCard(
+        context: context,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: AppColors.accent,
-              size: 26,
-            ),
+            Icon(icon, color: AppColors.accent, size: 26),
             const SizedBox(height: 14),
             Text(
               title,
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: AppColors.adaptiveTextSecondary(context),
                 fontSize: 12,
               ),
             ),
             const SizedBox(height: 5),
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.adaptiveTextPrimary(context),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -541,29 +543,32 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _buildPriceSummary({
+    required BuildContext context,
     required double pricePerNight,
     required int nights,
     required double total,
   }) {
     return _glassCard(
+      context: context,
       child: Column(
         children: [
           _summaryRow(
+            context: context,
             title: 'Price per night',
             value: 'Rs. ${pricePerNight.toInt()}',
           ),
           const SizedBox(height: 14),
           _summaryRow(
+            context: context,
             title: 'Total nights',
             value: '$nights',
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 14),
-            child: Divider(
-              color: Colors.white24,
-            ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Divider(color: AppColors.adaptiveBorder(context)),
           ),
           _summaryRow(
+            context: context,
             title: 'Total amount',
             value: 'Rs. ${total.toInt()}',
             isTotal: true,
@@ -574,6 +579,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _summaryRow({
+    required BuildContext context,
     required String title,
     required String value,
     bool isTotal = false,
@@ -584,7 +590,9 @@ class _BookingScreenState extends State<BookingScreen> {
           child: Text(
             title,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: isTotal ? 0.95 : 0.65),
+              color: isTotal
+                  ? AppColors.adaptiveTextPrimary(context)
+                  : AppColors.adaptiveTextSecondary(context),
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
@@ -593,7 +601,9 @@ class _BookingScreenState extends State<BookingScreen> {
         Text(
           value,
           style: TextStyle(
-            color: isTotal ? AppColors.accent : Colors.white,
+            color: isTotal
+                ? AppColors.accent
+                : AppColors.adaptiveTextPrimary(context),
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
           ),
@@ -602,8 +612,9 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildNoteBox() {
+  Widget _buildNoteBox(BuildContext context) {
     return _glassCard(
+      context: context,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -617,7 +628,7 @@ class _BookingScreenState extends State<BookingScreen> {
             child: Text(
               'This is a booking request. The hotel owner will accept or reject your request.',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.70),
+                color: AppColors.adaptiveTextSecondary(context),
                 height: 1.5,
               ),
             ),
@@ -628,6 +639,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _glassCard({
+    required BuildContext context,
     required Widget child,
     EdgeInsets padding = const EdgeInsets.all(16),
   }) {
@@ -639,11 +651,18 @@ class _BookingScreenState extends State<BookingScreen> {
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.10),
+            color: AppColors.adaptiveSurface(context),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
-            ),
+            border: Border.all(color: AppColors.adaptiveBorder(context)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: _isDark(context) ? 0.22 : 0.06,
+                ),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: child,
         ),
@@ -651,26 +670,31 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _buildBottomButton() {
+  Widget _buildBottomButton(BuildContext context) {
     return Positioned(
       left: 0,
       right: 0,
       bottom: 0,
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(26),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
             decoration: BoxDecoration(
-              color: AppColors.backgroundDark1.withValues(alpha: 0.88),
+              color: AppColors.adaptiveSurface(context),
               border: Border(
-                top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.18),
-                ),
+                top: BorderSide(color: AppColors.adaptiveBorder(context)),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(
+                    alpha: _isDark(context) ? 0.35 : 0.10,
+                  ),
+                  blurRadius: 24,
+                  offset: const Offset(0, -8),
+                ),
+              ],
             ),
             child: SizedBox(
               height: 56,
@@ -679,8 +703,12 @@ class _BookingScreenState extends State<BookingScreen> {
                 onPressed: isLoading ? null : _confirmBooking,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  foregroundColor: AppColors.backgroundDark1,
-                  disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.55),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.accent.withValues(
+                    alpha: 0.55,
+                  ),
+                  disabledForegroundColor: Colors.white70,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -690,7 +718,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         height: 23,
                         width: 23,
                         child: CircularProgressIndicator(
-                          color: AppColors.backgroundDark1,
+                          color: Colors.white,
                           strokeWidth: 2.5,
                         ),
                       )
