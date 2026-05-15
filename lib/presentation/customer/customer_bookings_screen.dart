@@ -13,10 +13,7 @@ import 'single_hotel_map_screen.dart';
 class CustomerBookingsScreen extends StatefulWidget {
   final VoidCallback? onBackToHome;
 
-  const CustomerBookingsScreen({
-    super.key,
-    this.onBackToHome,
-  });
+  const CustomerBookingsScreen({super.key, this.onBackToHome});
 
   @override
   State<CustomerBookingsScreen> createState() => _CustomerBookingsScreenState();
@@ -123,8 +120,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       if (query.isEmpty) return true;
 
       final hotelName = (data['hotelName'] ?? '').toString().toLowerCase();
-      final customerName =
-          (data['customerName'] ?? '').toString().toLowerCase();
+      final customerName = (data['customerName'] ?? '')
+          .toString()
+          .toLowerCase();
       final totalPrice = (data['totalPrice'] ?? '').toString().toLowerCase();
       final totalNights = (data['totalNights'] ?? '').toString().toLowerCase();
       final bookingStatus = (data['status'] ?? '').toString().toLowerCase();
@@ -162,9 +160,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         child: Stack(
           children: [
             Container(
-              decoration: const BoxDecoration(
-                gradient: AppColors.darkGradient,
-              ),
+              decoration: const BoxDecoration(gradient: AppColors.darkGradient),
             ),
             SafeArea(
               bottom: false,
@@ -199,8 +195,8 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                               ScrollViewKeyboardDismissBehavior.onDrag,
                           physics: const BouncingScrollPhysics(),
                           padding: EdgeInsets.only(
-                            bottom: 120 +
-                                MediaQuery.of(context).viewInsets.bottom,
+                            bottom:
+                                120 + MediaQuery.of(context).viewInsets.bottom,
                           ),
                           children: [
                             if (docs.isNotEmpty) _buildSummaryCards(stats),
@@ -233,8 +229,9 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                                         doc.data() as Map<String, dynamic>;
 
                                     return Padding(
-                                      padding:
-                                          const EdgeInsets.only(bottom: 16),
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16,
+                                      ),
                                       child: _PremiumBookingCard(
                                         bookingData: data,
                                         bookingId: doc.id,
@@ -335,9 +332,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           },
           decoration: InputDecoration(
             hintText: 'Search your bookings...',
-            hintStyle: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-            ),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
             icon: Icon(
               Icons.search,
               color: Colors.white.withValues(alpha: 0.5),
@@ -371,9 +366,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
           child: child,
         ),
@@ -389,11 +382,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          _buildStatCard(
-            'Total',
-            stats['Total'] ?? 0,
-            const Color(0xFF2196F3),
-          ),
+          _buildStatCard('Total', stats['Total'] ?? 0, const Color(0xFF2196F3)),
           _buildStatCard(
             'Pending',
             stats['Pending'] ?? 0,
@@ -529,11 +518,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 70,
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
+            Icon(icon, size: 70, color: Colors.white.withValues(alpha: 0.2)),
             const SizedBox(height: 18),
             Text(
               title,
@@ -663,10 +648,12 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
   Map<String, dynamic> _buildFallbackHotelData() {
     return {
       'name': widget.bookingData['hotelName'] ?? 'Unknown Hotel',
-      'imageUrl': widget.bookingData['hotelImage'] ??
+      'imageUrl':
+          widget.bookingData['hotelImage'] ??
           widget.bookingData['imageUrl'] ??
           '',
-      'pricePerNight': widget.bookingData['pricePerNight'] ??
+      'pricePerNight':
+          widget.bookingData['pricePerNight'] ??
           widget.bookingData['roomPrice'] ??
           0,
       'city': widget.bookingData['city'] ?? 'Unknown City',
@@ -705,10 +692,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         return fallbackData;
       }
 
-      return {
-        ...fallbackData,
-        ...hotelDoc.data()!,
-      };
+      return {...fallbackData, ...hotelDoc.data()!};
     } catch (e) {
       _showActionSnackBar('Unable to load hotel details.');
       return null;
@@ -742,10 +726,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BookingScreen(
-          hotelId: hotelId,
-          hotel: hotelData,
-        ),
+        builder: (context) => BookingScreen(hotelId: hotelId, hotel: hotelData),
       ),
     );
   }
@@ -758,9 +739,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SingleHotelMapScreen(
-          hotel: hotelData,
-        ),
+        builder: (context) =>
+            SingleHotelMapScreen(hotel: hotelData, showRouteInitially: true),
       ),
     );
   }
@@ -774,10 +754,8 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => HotelDetailScreen(
-          hotelId: hotelId,
-          hotel: hotelData,
-        ),
+        builder: (context) =>
+            HotelDetailScreen(hotelId: hotelId, hotel: hotelData),
       ),
     );
   }
@@ -833,9 +811,9 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           .collection('bookings')
           .doc(widget.bookingId)
           .update({
-        'status': 'cancelled',
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+            'status': 'cancelled',
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
 
       if (!mounted) return;
 
@@ -873,11 +851,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Icon(
-        Icons.hotel,
-        color: Colors.white54,
-        size: 32,
-      ),
+      child: const Icon(Icons.hotel, color: Colors.white54, size: 32),
     );
   }
 
@@ -1015,10 +989,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                   ),
                 ),
                 AnimatedCrossFade(
-                  firstChild: const SizedBox(
-                    width: double.infinity,
-                    height: 0,
-                  ),
+                  firstChild: const SizedBox(width: double.infinity, height: 0),
                   secondChild: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: Column(
@@ -1140,9 +1111,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             child: OutlinedButton(
               onPressed: _openDirections,
               style: OutlinedButton.styleFrom(
-                side: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
+                side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

@@ -1,19 +1,57 @@
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
 
-class SingleHotelMapScreen extends StatelessWidget {
+class SingleHotelMapScreen extends StatefulWidget {
   final Map<String, dynamic> hotel;
+  final bool showRouteInitially;
 
   const SingleHotelMapScreen({
     super.key,
     required this.hotel,
+    this.showRouteInitially = false,
   });
+
+  @override
+  State<SingleHotelMapScreen> createState() => _SingleHotelMapScreenState();
+}
+
+class _SingleHotelMapScreenState extends State<SingleHotelMapScreen> {
+  final MapController _mapController = MapController();
+
+  late bool _hasLocation;
+  late LatLng _hotelPosition;
+  LatLng? _userLocation;
+
+  bool _isLoadingRoute = false;
+  List<LatLng> _routePoints = [];
+  String _routeDistance = '';
+  String _routeDuration = '';
+
+  @override
+  void initState() {
+    super.initState();
+
+    final double latitude = _toDouble(widget.hotel['latitude']);
+    final double longitude = _toDouble(widget.hotel['longitude']);
+
+    _hasLocation = latitude != 0.0 && longitude != 0.0;
+    _hotelPosition = LatLng(latitude, longitude);
+
+    if (_hasLocation && widget.showRouteInitially) {
+      _fetchRoute();
+    } else if (_hasLocation) {
+      _getUserLocationSilent();
+    }
+  }
 
   double _toDouble(dynamic value) {
     if (value == null) return 0.0;
@@ -23,18 +61,132 @@ class SingleHotelMapScreen extends StatelessWidget {
     return double.tryParse(value.toString()) ?? 0.0;
   }
 
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // Gets user location just to show the blue dot, without triggering a route
+  Future<void> _getUserLocationSilent() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        _userLocation = LatLng(position.latitude, position.longitude);
+      });
+    } catch (e) {
+      // Fail silently if we are just trying to show the blue dot
+    }
+  }
+
+  // ===========================================================================
+  // ROUTING ENGINE (OSRM API)
+  // ===========================================================================
+  Future<void> _fetchRoute() async {
+    setState(() => _isLoadingRoute = true);
+
+    try {
+      // 1. Get user location
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showErrorSnackBar(
+          'Please enable Location Services to get directions.',
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showErrorSnackBar('Location permission denied.');
+          return;
+        }
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final startLat = position.latitude;
+      final startLng = position.longitude;
+      final endLat = _hotelPosition.latitude;
+      final endLng = _hotelPosition.longitude;
+
+      setState(() {
+        _userLocation = LatLng(startLat, startLng);
+      });
+
+      // 2. Call Free OSRM API
+      final url =
+          'http://router.project-osrm.org/route/v1/driving/$startLng,$startLat;$endLng,$endLat?geometries=geojson&overview=full';
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final route = data['routes'][0];
+
+        // Decode coordinates
+        final List coords = route['geometry']['coordinates'];
+        final List<LatLng> points = coords
+            .map((c) => LatLng(c[1], c[0]))
+            .toList();
+
+        // Get Distance and Duration
+        final double distanceMeters = route['distance'];
+        final double durationSeconds = route['duration'];
+
+        setState(() {
+          _routePoints = points;
+          _routeDistance = '${(distanceMeters / 1000).toStringAsFixed(1)} km';
+          _routeDuration = '${(durationSeconds / 60).toStringAsFixed(0)} min';
+        });
+
+        // 3. Zoom the camera to fit both the User and the Hotel!
+        if (_routePoints.isNotEmpty) {
+          final bounds = LatLngBounds.fromPoints(_routePoints);
+          _mapController.fitCamera(
+            CameraFit.bounds(
+              bounds: bounds,
+              padding: const EdgeInsets.only(
+                top: 100,
+                bottom: 250,
+                left: 60,
+                right: 60,
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _showErrorSnackBar('Could not calculate route. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoadingRoute = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final String hotelName = hotel['name'] ?? 'Unknown Hotel';
-    final String city = hotel['city'] ?? 'Unknown City';
-    final String address = hotel['address'] ?? 'Address not available';
-
-    final double latitude = _toDouble(hotel['latitude']);
-    final double longitude = _toDouble(hotel['longitude']);
-
-    final bool hasLocation = latitude != 0.0 && longitude != 0.0;
-
-    final LatLng hotelPosition = LatLng(latitude, longitude);
+    final String hotelName = widget.hotel['name'] ?? 'Unknown Hotel';
+    final String city = widget.hotel['city'] ?? 'Unknown City';
+    final String address = widget.hotel['address'] ?? 'Address not available';
 
     return Scaffold(
       body: AppBackground(
@@ -50,25 +202,43 @@ class SingleHotelMapScreen extends StatelessWidget {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(28),
-                    child: hasLocation
+                    child: _hasLocation
                         ? Stack(
                             children: [
                               FlutterMap(
+                                mapController: _mapController,
                                 options: MapOptions(
-                                  initialCenter: hotelPosition,
+                                  initialCenter: _hotelPosition,
                                   initialZoom: 15,
                                 ),
                                 children: [
+                                  // Dark Map Tiles for Luxury Theme
                                   TileLayer(
                                     urlTemplate:
                                         'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
                                     subdomains: const ['a', 'b', 'c', 'd'],
-                                    userAgentPackageName: 'com.example.hotelbookingapp',
+                                    userAgentPackageName:
+                                        'com.example.hotelbookingapp',
                                   ),
+
+                                  // THE ROUTE PATH (Bright Blue Line)
+                                  if (_routePoints.isNotEmpty)
+                                    PolylineLayer(
+                                      polylines: [
+                                        Polyline(
+                                          points: _routePoints,
+                                          strokeWidth: 5.0,
+                                          color: Colors.blueAccent,
+                                        ),
+                                      ],
+                                    ),
+
+                                  // MARKERS (Hotel & User)
                                   MarkerLayer(
                                     markers: [
+                                      // Hotel Marker (Yellow Accent)
                                       Marker(
-                                        point: hotelPosition,
+                                        point: _hotelPosition,
                                         width: 52,
                                         height: 52,
                                         child: Container(
@@ -76,14 +246,14 @@ class SingleHotelMapScreen extends StatelessWidget {
                                             color: AppColors.accent,
                                             shape: BoxShape.circle,
                                             border: Border.all(
-                                              color:
-                                                  AppColors.backgroundDark1,
+                                              color: AppColors.backgroundDark1,
                                               width: 3,
                                             ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Colors.black
-                                                    .withValues(alpha: 0.25),
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.4,
+                                                ),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 5),
                                               ),
@@ -91,17 +261,42 @@ class SingleHotelMapScreen extends StatelessWidget {
                                           ),
                                           child: const Icon(
                                             Icons.hotel_rounded,
-                                            color:
-                                                AppColors.backgroundDark1,
+                                            color: AppColors.backgroundDark1,
                                             size: 26,
                                           ),
                                         ),
                                       ),
+
+                                      // User Marker (Blue Dot)
+                                      if (_userLocation != null)
+                                        Marker(
+                                          point: _userLocation!,
+                                          width: 30,
+                                          height: 30,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.blueAccent,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(
+                                                color: Colors.white,
+                                                width: 3,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black
+                                                      .withValues(alpha: 0.3),
+                                                  blurRadius: 8,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                   ),
                                 ],
                               ),
 
+                              // Bottom Glassmorphism Info Card
                               Positioned(
                                 left: 16,
                                 right: 16,
@@ -125,20 +320,14 @@ class SingleHotelMapScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar(
-    BuildContext context,
-    String hotelName,
-    String city,
-  ) {
+  Widget _buildTopBar(BuildContext context, String hotelName, String city) {
     return Row(
       children: [
         _circleGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () => Navigator.pop(context),
         ),
-
         const SizedBox(width: 14),
-
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,10 +345,7 @@ class SingleHotelMapScreen extends StatelessWidget {
                 '$hotelName, $city',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
           ),
@@ -178,70 +364,156 @@ class SingleHotelMapScreen extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.backgroundDark1.withValues(alpha: 0.88),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 48,
-                width: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.location_on,
-                  color: AppColors.accent,
+              Row(
+                children: [
+                  Container(
+                    height: 48,
+                    width: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hotelName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          city,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.70),
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                address,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontSize: 13,
                 ),
               ),
 
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              // Routing Information Panel
+              if (_routePoints.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Divider(color: Colors.white.withValues(alpha: 0.15)),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    Text(
-                      hotelName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    _buildRouteInfoBox(
+                      Icons.directions_car_rounded,
+                      'Drive',
+                      _routeDuration,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      city,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.70),
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      address,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 12,
-                      ),
+                    _buildRouteInfoBox(
+                      Icons.straighten_rounded,
+                      'Distance',
+                      _routeDistance,
                     ),
                   ],
                 ),
-              ),
+              ],
+
+              // Get Directions Button
+              if (_routePoints.isEmpty) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoadingRoute ? null : _fetchRoute,
+                    icon: _isLoadingRoute
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                              color: AppColors.backgroundDark1,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.directions_rounded,
+                            color: AppColors.backgroundDark1,
+                          ),
+                    label: Text(
+                      _isLoadingRoute ? 'Calculating...' : 'Get Directions',
+                      style: const TextStyle(
+                        color: AppColors.backgroundDark1,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRouteInfoBox(IconData icon, String label, String value) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.accent, size: 28),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     );
   }
 
@@ -315,15 +587,9 @@ class SingleHotelMapScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),

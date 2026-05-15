@@ -4,29 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hotelbookingapp/presentation/owner/owner_bookings_screen.dart';
-import 'package:hotelbookingapp/presentation/owner/owner_hotels_screen.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
 import '../customer/edit_profile_screen.dart';
 
-
 class OwnerProfileScreen extends StatelessWidget {
   final VoidCallback onBackToHome;
   final VoidCallback? onOpenBookings;
   final VoidCallback? onMyHotels;
-  const OwnerProfileScreen({super.key, required this.onBackToHome, this.onOpenBookings, this.onMyHotels});
+  const OwnerProfileScreen({
+    super.key,
+    required this.onBackToHome,
+    this.onOpenBookings,
+    this.onMyHotels,
+  });
 
   Future<void> _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
 
     if (!context.mounted) return;
 
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-      (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _userStream() {
@@ -69,9 +68,8 @@ class OwnerProfileScreen extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => EditProfileScreen(
-            userData: userDoc.data() ?? {},
-          ),
+          builder: (context) =>
+              EditProfileScreen(userData: userDoc.data() ?? {}),
         ),
       );
     } catch (e) {
@@ -154,20 +152,18 @@ class OwnerProfileScreen extends StatelessWidget {
 
                           final userData = snapshot.data?.data() ?? {};
 
-                          final String name =
-                              userData['name'] ?? 'Hotel Owner';
+                          final String name = userData['name'] ?? 'Hotel Owner';
 
-                          final String email = userData['email'] ??
+                          final String email =
+                              userData['email'] ??
                               currentUser.email ??
                               'No email';
 
-                          final String phone =
-                              userData['phone'] ?? 'Not added';
+                          final String phone = userData['phone'] ?? 'Not added';
 
                           final String role = userData['role'] ?? 'owner';
 
-                          final String? profileImage =
-                              userData['profileImage'];
+                          final String? profileImage = userData['profileImage'];
 
                           return Column(
                             children: [
@@ -212,9 +208,9 @@ class OwnerProfileScreen extends StatelessWidget {
         _circleGlassButton(
           icon: Icons.arrow_back_ios_new_rounded,
           onTap: () {
-            if(this.onBackToHome!=null){
+            if (this.onBackToHome != null) {
               this.onBackToHome();
-            }else if(Navigator.canPop(context)){
+            } else if (Navigator.canPop(context)) {
               Navigator.pop(context);
             }
           },
@@ -245,10 +241,7 @@ class OwnerProfileScreen extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: profileImage == null || profileImage.isEmpty
                   ? const LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.secondary,
-                      ],
+                      colors: [AppColors.primary, AppColors.secondary],
                     )
                   : null,
               image: profileImage != null && profileImage.isNotEmpty
@@ -304,10 +297,7 @@ class OwnerProfileScreen extends StatelessWidget {
           const SizedBox(height: 14),
 
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.accent.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(22),
@@ -417,11 +407,7 @@ class OwnerProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       child: Column(
         children: [
-          Icon(
-            icon,
-            color: AppColors.accent,
-            size: 24,
-          ),
+          Icon(icon, color: AppColors.accent, size: 24),
           const SizedBox(height: 8),
           Text(
             value,
@@ -490,17 +476,17 @@ class OwnerProfileScreen extends StatelessWidget {
             title: 'My Hotels',
             subtitle: 'View and manage your hotels',
             onTap: () {
-            if (onMyHotels != null) {
-              onMyHotels!();
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OwnerBookingsScreen(),
-                ),
-              );
-            }
-          },
+              if (onMyHotels != null) {
+                onMyHotels!();
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OwnerBookingsScreen(),
+                  ),
+                );
+              }
+            },
           ),
           _divider(),
           _actionTile(
@@ -508,18 +494,18 @@ class OwnerProfileScreen extends StatelessWidget {
             title: 'Booking Requests',
             subtitle: 'Accept or reject booking requests',
             onTap: () {
-            if (onOpenBookings != null) {
-              onOpenBookings!();
-            } else {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OwnerBookingsScreen(),
-                ),
-              );
-            }
-          },
-        ),
+              if (onOpenBookings != null) {
+                onOpenBookings!();
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OwnerBookingsScreen(),
+                  ),
+                );
+              }
+            },
+          ),
           _divider(),
           _actionTile(
             icon: Icons.logout_rounded,
@@ -542,11 +528,7 @@ class OwnerProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 13),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: AppColors.accent,
-            size: 22,
-          ),
+          Icon(icon, color: AppColors.accent, size: 22),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
@@ -595,15 +577,9 @@ class OwnerProfileScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: color.withValues(alpha: 0.35),
-                ),
+                border: Border.all(color: color.withValues(alpha: 0.35)),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 22,
-              ),
+              child: Icon(icon, color: color, size: 22),
             ),
 
             const SizedBox(width: 14),
@@ -659,15 +635,9 @@ class OwnerProfileScreen extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),
@@ -688,9 +658,7 @@ class OwnerProfileScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.20),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
           child: child,
         ),
@@ -699,10 +667,7 @@ class OwnerProfileScreen extends StatelessWidget {
   }
 
   Widget _divider() {
-    return Divider(
-      color: Colors.white.withValues(alpha: 0.12),
-      height: 1,
-    );
+    return Divider(color: Colors.white.withValues(alpha: 0.12), height: 1);
   }
 
   Widget _buildLoginRequired(BuildContext context) {
@@ -731,9 +696,7 @@ class OwnerProfileScreen extends StatelessWidget {
               Text(
                 'Please login to view your owner profile.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.70),
-                ),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -768,16 +731,11 @@ class OwnerProfileScreen extends StatelessWidget {
           ),
           title: const Text(
             'Logout',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           content: Text(
             'Are you sure you want to logout?',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.72),
-            ),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.72)),
           ),
           actions: [
             TextButton(
@@ -786,9 +744,7 @@ class OwnerProfileScreen extends StatelessWidget {
               },
               child: Text(
                 'Cancel',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.70),
-                ),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
               ),
             ),
             TextButton(
