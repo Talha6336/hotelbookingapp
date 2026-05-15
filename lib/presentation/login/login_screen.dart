@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen>
                 style: TextStyle(color: Colors.white),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.1),
+                backgroundColor: Colors.white.withValues(alpha: 0.1),
                 elevation: 0,
               ),
             ),
@@ -273,9 +273,9 @@ class _LoginScreenState extends State<LoginScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF1A237E).withOpacity(0.4),
-                    const Color(0xFF1A237E).withOpacity(0.9),
-                    const Color(0xFF000000).withOpacity(0.95),
+                    const Color(0xFF1A237E).withValues(alpha: 0.4),
+                    const Color(0xFF1A237E).withValues(alpha: 0.9),
+                    const Color(0xFF000000).withValues(alpha: 0.95),
                   ],
                   stops: const [0.0, 0.5, 1.0],
                 ),
@@ -337,7 +337,7 @@ class _LoginScreenState extends State<LoginScreen>
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -352,15 +352,15 @@ class _LoginScreenState extends State<LoginScreen>
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 30,
                 spreadRadius: -5,
               ),
@@ -422,15 +422,15 @@ class _LoginScreenState extends State<LoginScreen>
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-        prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   _isPasswordVisible
                       ? Icons.visibility_outlined
                       : Icons.visibility_off_outlined,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
                 onPressed: () {
                   setState(() {
@@ -440,14 +440,14 @@ class _LoginScreenState extends State<LoginScreen>
               )
             : null,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -472,7 +472,7 @@ class _LoginScreenState extends State<LoginScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.4),
+              color: AppColors.primary.withValues(alpha: 0.4),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -517,9 +517,9 @@ class _LoginScreenState extends State<LoginScreen>
       onPressed: _isLoading ? null : _signInWithGoogle,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        side: BorderSide(color: Colors.white.withOpacity(0.4), width: 1.5),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        backgroundColor: Colors.white.withOpacity(0.05),
+        backgroundColor: Colors.white.withValues(alpha: 0.05),
       ),
       icon: Container(
         padding: const EdgeInsets.all(4),
@@ -546,7 +546,7 @@ class _LoginScreenState extends State<LoginScreen>
       children: [
         Text(
           "Don't have an account? ",
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
         ),
         GestureDetector(
           onTap: () {

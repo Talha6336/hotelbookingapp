@@ -58,14 +58,14 @@ class _AppBackgroundState extends State<AppBackground>
                   top: -80 +
                       (math.sin(_floatingController.value * math.pi) * 30),
                   left: -90,
-                  color: AppColors.primary.withOpacity(0.35),
+                  color: AppColors.primary.withValues(alpha: 0.35),
                 ),
                 _buildFloatingCircle(
                   size: 320,
                   bottom: -120 +
                       (math.cos(_floatingController.value * math.pi) * 45),
                   right: -80,
-                  color: AppColors.secondary.withOpacity(0.25),
+                  color: AppColors.secondary.withValues(alpha: 0.25),
                 ),
               ],
             );

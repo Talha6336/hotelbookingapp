@@ -142,10 +142,10 @@ class NotificationsScreen extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
+                color: Colors.white.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.22),
+                  color: Colors.white.withValues(alpha: 0.22),
                 ),
               ),
               child: const Icon(
@@ -193,10 +193,10 @@ class NotificationsScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(26),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
+            color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.20),
+              color: Colors.white.withValues(alpha: 0.20),
             ),
           ),
           child: Column(
@@ -220,7 +220,7 @@ class NotificationsScreen extends StatelessWidget {
               Text(
                 'Booking updates will appear here.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.70),
+                  color: Colors.white.withValues(alpha: 0.70),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -246,13 +246,13 @@ class NotificationsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: notification.isRead
-              ? Colors.white.withOpacity(0.08)
-              : AppColors.accent.withOpacity(0.18),
+              ? Colors.white.withValues(alpha: 0.08)
+              : AppColors.accent.withValues(alpha: 0.18),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: notification.isRead
-                ? Colors.white.withOpacity(0.12)
-                : AppColors.accent.withOpacity(0.45),
+                ? Colors.white.withValues(alpha: 0.12)
+                : AppColors.accent.withValues(alpha: 0.45),
           ),
         ),
         child: Row(
@@ -262,7 +262,7 @@ class NotificationsScreen extends StatelessWidget {
               height: 44,
               width: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.18),
+                color: color.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -292,7 +292,7 @@ class NotificationsScreen extends StatelessWidget {
                   Text(
                     notification.message,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.70),
+                      color: Colors.white.withValues(alpha: 0.70),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -301,7 +301,7 @@ class NotificationsScreen extends StatelessWidget {
                   Text(
                     _formatDate(notification.createdAt),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.45),
+                      color: Colors.white.withValues(alpha: 0.45),
                       fontSize: 12,
                     ),
                   ),

@@ -165,7 +165,7 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            AppColors.backgroundDark1.withOpacity(0.9),
+                            AppColors.backgroundDark1.withValues(alpha: 0.9),
                           ],
                         ),
                       ),
@@ -294,10 +294,10 @@ class _EditHotelScreenState extends State<EditHotelScreen> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: hint,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         prefixIcon: Icon(icon, color: AppColors.accent, size: 20),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withValues(alpha: 0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,

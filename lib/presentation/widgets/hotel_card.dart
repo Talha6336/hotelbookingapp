@@ -73,15 +73,15 @@ Widget build(BuildContext context) {
             filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.20),
+                  color: Colors.white.withValues(alpha: 0.20),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
+                    color: Colors.black.withValues(alpha: 0.18),
                     blurRadius: 24,
                     offset: const Offset(0, 12),
                   ),
@@ -106,7 +106,7 @@ Widget build(BuildContext context) {
 
                             return Container(
                               height: 200,
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withValues(alpha: 0.08),
                               child: const Center(
                                 child: CircularProgressIndicator(
                                   color: AppColors.accent,
@@ -117,7 +117,7 @@ Widget build(BuildContext context) {
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               height: 200,
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withValues(alpha: 0.08),
                               child: const Center(
                                 child: Icon(
                                   Icons.hotel,
@@ -140,8 +140,8 @@ Widget build(BuildContext context) {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.black.withOpacity(0.05),
-                                Colors.black.withOpacity(0.30),
+                                Colors.black.withValues(alpha: 0.05),
+                                Colors.black.withValues(alpha: 0.30),
                               ],
                             ),
                           ),
@@ -158,10 +158,10 @@ Widget build(BuildContext context) {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.20),
+                                color: Colors.white.withValues(alpha: 0.20),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.25),
+                                  color: Colors.white.withValues(alpha: 0.25),
                                 ),
                               ),
                               child: const Icon(
@@ -209,7 +209,7 @@ Widget build(BuildContext context) {
                                     child: Text(
                                       widget.location,
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.72),
+                                        color: Colors.white.withValues(alpha: 0.72),
                                         fontSize: 13,
                                       ),
                                       maxLines: 1,
@@ -259,7 +259,7 @@ Widget build(BuildContext context) {
                                   TextSpan(
                                     text: ' /night',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.65),
+                                      color: Colors.white.withValues(alpha: 0.65),
                                       fontSize: 12,
                                     ),
                                   ),

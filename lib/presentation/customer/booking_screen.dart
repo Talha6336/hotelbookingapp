@@ -214,7 +214,7 @@ class _BookingScreenState extends State<BookingScreen> {
           content: Text(
             'Your booking request has been sent to the hotel owner. Status: pending.',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.75),
+              color: Colors.white.withValues(alpha: 0.75),
             ),
           ),
           actions: [
@@ -288,7 +288,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   Text(
                     'Select your stay dates and send request to hotel owner.',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.70),
+                      color: Colors.white.withValues(alpha: 0.70),
                       fontSize: 14,
                     ),
                   ),
@@ -384,10 +384,10 @@ class _BookingScreenState extends State<BookingScreen> {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.13),
+              color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
               ),
             ),
             child: Icon(
@@ -421,7 +421,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 return Container(
                   height: 105,
                   width: 105,
-                  color: Colors.white.withOpacity(0.10),
+                  color: Colors.white.withValues(alpha: 0.10),
                   child: const Icon(
                     Icons.hotel,
                     color: Colors.white70,
@@ -463,7 +463,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       child: Text(
                         city,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.70),
+                          color: Colors.white.withValues(alpha: 0.70),
                           fontSize: 13,
                         ),
                       ),
@@ -522,7 +522,7 @@ class _BookingScreenState extends State<BookingScreen> {
             Text(
               title,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withValues(alpha: 0.55),
                 fontSize: 12,
               ),
             ),
@@ -584,7 +584,7 @@ class _BookingScreenState extends State<BookingScreen> {
           child: Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(isTotal ? 0.95 : 0.65),
+              color: Colors.white.withValues(alpha: isTotal ? 0.95 : 0.65),
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
             ),
@@ -617,7 +617,7 @@ class _BookingScreenState extends State<BookingScreen> {
             child: Text(
               'This is a booking request. The hotel owner will accept or reject your request.',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.70),
+                color: Colors.white.withValues(alpha: 0.70),
                 height: 1.5,
               ),
             ),
@@ -639,10 +639,10 @@ class _BookingScreenState extends State<BookingScreen> {
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
+            color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.20),
+              color: Colors.white.withValues(alpha: 0.20),
             ),
           ),
           child: child,
@@ -665,10 +665,10 @@ class _BookingScreenState extends State<BookingScreen> {
           child: Container(
             padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
             decoration: BoxDecoration(
-              color: AppColors.backgroundDark1.withOpacity(0.88),
+              color: AppColors.backgroundDark1.withValues(alpha: 0.88),
               border: Border(
                 top: BorderSide(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                 ),
               ),
             ),
@@ -680,7 +680,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent,
                   foregroundColor: AppColors.backgroundDark1,
-                  disabledBackgroundColor: AppColors.accent.withOpacity(0.55),
+                  disabledBackgroundColor: AppColors.accent.withValues(alpha: 0.55),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),

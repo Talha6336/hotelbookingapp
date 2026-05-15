@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -183,13 +183,13 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                     size: 300,
                     top: -100,
                     left: -100,
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                   ),
                   _buildFloatingCircle(
                     size: 400,
                     bottom: -50,
                     right: -150,
-                    color: AppColors.secondary.withOpacity(0.15),
+                    color: AppColors.secondary.withValues(alpha: 0.15),
                   ),
                 ],
               );
@@ -258,9 +258,9 @@ class _AddHotelScreenState extends State<AddHotelScreen>
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             border: Border(
-              bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+              bottom: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
             ),
           ),
           child: Row(
@@ -270,7 +270,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -467,10 +467,10 @@ class _AddHotelScreenState extends State<AddHotelScreen>
       validator: (value) => value!.isEmpty ? "Required" : null,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
         prefixIcon: Icon(icon, color: AppColors.accent, size: 20),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.2),
+        fillColor: Colors.black.withValues(alpha: 0.2),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -506,17 +506,17 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                         colors: [AppColors.primary, AppColors.secondary],
                       )
                     : null,
-                color: isSelected ? null : Colors.white.withOpacity(0.08),
+                color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
                       ? Colors.transparent
-                      : Colors.white.withOpacity(0.2),
+                      : Colors.white.withValues(alpha: 0.2),
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
+                          color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 10,
                         ),
                       ]
@@ -557,13 +557,13 @@ class _AddHotelScreenState extends State<AddHotelScreen>
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.accent.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.05),
+                    ? AppColors.accent.withValues(alpha: 0.2)
+                    : Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.accent
-                      : Colors.white.withOpacity(0.1),
+                      : Colors.white.withValues(alpha: 0.1),
                 ),
               ),
               child: Row(
@@ -656,11 +656,11 @@ class _AddHotelScreenState extends State<AddHotelScreen>
                     horizontal: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundDark1.withOpacity(0.88),
+                    color: AppColors.backgroundDark1.withValues(alpha: 0.88),
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                       ),
                     ],
@@ -717,7 +717,7 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.4),
+              color: AppColors.primary.withValues(alpha: 0.4),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -779,9 +779,9 @@ class _AddHotelScreenState extends State<AddHotelScreen>
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
           child: child,
         ),

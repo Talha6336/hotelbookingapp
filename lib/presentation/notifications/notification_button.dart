@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../../core/theme/app_theme.dart';
+
 import 'notification_service.dart';
 import 'notifications_screen.dart';
 
@@ -50,10 +50,10 @@ class NotificationButton extends StatelessWidget {
           height: 46,
           width: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.12),
+            color: Colors.white.withValues(alpha: 0.12),
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withOpacity(0.22),
+              color: Colors.white.withValues(alpha: 0.22),
             ),
           ),
           child: IconButton(

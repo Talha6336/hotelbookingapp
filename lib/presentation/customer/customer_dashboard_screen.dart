@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui'; // <-- Added for the glass blur effect
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -32,6 +33,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
 
   String searchQuery = '';
   String selectedCity = 'All';
+
+  // NEW: Track the current tab
+  int _bottomNavIndex = 0;
 
   final List<String> cities = const [
     'All',
@@ -68,165 +72,296 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
   ) {
     final query = searchQuery.trim().toLowerCase();
 
-    return docs.where((doc) {
-      final hotel = doc.data();
+    return docs
+        .where((doc) {
+          final hotel = doc.data();
 
-      final name = hotel['name']?.toString().toLowerCase() ?? '';
-      final city = hotel['city']?.toString() ?? '';
-      final cityLower = city.toLowerCase();
+          final name = hotel['name']?.toString().toLowerCase() ?? '';
+          final city = hotel['city']?.toString() ?? '';
+          final cityLower = city.toLowerCase();
 
-      final matchesSearch =
-          query.isEmpty || name.contains(query) || cityLower.contains(query);
+          final matchesSearch =
+              query.isEmpty ||
+              name.contains(query) ||
+              cityLower.contains(query);
 
-      final matchesCity = selectedCity == 'All' || city == selectedCity;
+          final matchesCity = selectedCity == 'All' || city == selectedCity;
 
-      return matchesSearch && matchesCity;
-    }).toList(growable: false);
+          return matchesSearch && matchesCity;
+        })
+        .toList(growable: false);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Detect if the keyboard is open to hide the navigation bar
+    final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
+      extendBody: true,
       backgroundColor: AppColors.backgroundDark1,
       body: Stack(
         children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: AppColors.darkGradient,
-            ),
-            child: SizedBox.expand(),
+          // 1. THE INDEXED STACK (Holds all tabs in memory, shows only active one)
+          IndexedStack(
+            index: _bottomNavIndex,
+            children: [
+              _buildHomeTab(), // Index 0
+              const HotelsMapScreen(), // Index 1
+              const CustomerBookingsScreen(), // Index 2
+              const ProfileScreen(), // Index 3
+            ],
           ),
 
-          const _StaticGlowBackground(),
-
-          SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                _buildSearchBox(),
-                _buildCityFilters(),
-
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _hotelsStream,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.accent,
-                          ),
-                        );
-                      }
-
-                      if (snapshot.hasError) {
-                        return _buildMessageState(
-                          icon: Icons.error_outline,
-                          title: 'Something went wrong',
-                          subtitle: 'Please check your Firebase setup.',
-                        );
-                      }
-
-                      final allDocs = snapshot.data?.docs ?? [];
-
-                      if (allDocs.isEmpty) {
-                        return _buildMessageState(
-                          icon: Icons.hotel_outlined,
-                          title: 'No hotels available',
-                          subtitle: 'Seed dummy hotel data first.',
-                        );
-                      }
-
-                      final hotels = filterHotels(allDocs);
-
-                      if (hotels.isEmpty) {
-                        return _buildMessageState(
-                          icon: Icons.search_off,
-                          title: 'No hotels found',
-                          subtitle: 'Try another city or hotel name.',
-                        );
-                      }
-
-                      return CustomScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        cacheExtent: 700,
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: _buildSectionTitle(
-                              title: 'Featured Hotels',
-                              actionText: 'View Map',
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const HotelsMapScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                          SliverToBoxAdapter(
-                            child: _buildFeaturedHotels(hotels),
-                          ),
-
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 12),
-                          ),
-
-                          SliverToBoxAdapter(
-                            child: _buildSectionTitle(
-                              title: 'Recommended',
-                              actionText: '${hotels.length} found',
-                              onTap: () {},
-                            ),
-                          ),
-
-                          SliverList.builder(
-                            itemCount: hotels.length,
-                            itemBuilder: (context, index) {
-                              final doc = hotels[index];
-                              final hotel = doc.data();
-
-                              return RepaintBoundary(
-                                child: PremiumHotelCard(
-                                  imageUrl: hotel['imageUrl'] ?? '',
-                                  title: hotel['name'] ?? 'Unknown Hotel',
-                                  location: hotel['city'] ?? 'Unknown City',
-                                  price: _toDouble(hotel['pricePerNight']),
-                                  rating: _toDouble(hotel['rating']),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => HotelDetailScreen(
-                                          hotelId: doc.id,
-                                          hotel: hotel,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-
-                          const SliverToBoxAdapter(
-                            child: SizedBox(height: 90),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+          // 2. THE ANIMATED PERSISTENT NAVIGATION BAR
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+            bottom: isKeyboardOpen ? -100 : 24,
+            left: 24,
+            right: 24,
+            child: _buildFloatingNavBar(),
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
+
+  // =========================================================================
+  // EXTRACTED HOME TAB CONTENT
+  // =========================================================================
+  Widget _buildHomeTab() {
+    return Stack(
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(gradient: AppColors.darkGradient),
+          child: SizedBox.expand(),
+        ),
+
+        const _StaticGlowBackground(),
+
+        SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildSearchBox(),
+              _buildCityFilters(),
+
+              Expanded(
+                child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: _hotelsStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.accent,
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      return _buildMessageState(
+                        icon: Icons.error_outline,
+                        title: 'Something went wrong',
+                        subtitle: 'Please check your Firebase setup.',
+                      );
+                    }
+
+                    final allDocs = snapshot.data?.docs ?? [];
+
+                    if (allDocs.isEmpty) {
+                      return _buildMessageState(
+                        icon: Icons.hotel_outlined,
+                        title: 'No hotels available',
+                        subtitle: 'Seed dummy hotel data first.',
+                      );
+                    }
+
+                    final hotels = filterHotels(allDocs);
+
+                    if (hotels.isEmpty) {
+                      return _buildMessageState(
+                        icon: Icons.search_off,
+                        title: 'No hotels found',
+                        subtitle: 'Try another city or hotel name.',
+                      );
+                    }
+
+                    return CustomScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      cacheExtent: 700,
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: _buildSectionTitle(
+                            title: 'Featured Hotels',
+                            actionText: 'View Map',
+                            onTap: () {
+                              // Switch to Map Tab smoothly
+                              setState(() {
+                                _bottomNavIndex = 1;
+                              });
+                            },
+                          ),
+                        ),
+
+                        SliverToBoxAdapter(child: _buildFeaturedHotels(hotels)),
+
+                        const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+                        SliverToBoxAdapter(
+                          child: _buildSectionTitle(
+                            title: 'Recommended',
+                            actionText: '${hotels.length} found',
+                            onTap: () {},
+                          ),
+                        ),
+
+                        SliverList.builder(
+                          itemCount: hotels.length,
+                          itemBuilder: (context, index) {
+                            final doc = hotels[index];
+                            final hotel = doc.data();
+
+                            return RepaintBoundary(
+                              child: PremiumHotelCard(
+                                imageUrl: hotel['imageUrl'] ?? '',
+                                title: hotel['name'] ?? 'Unknown Hotel',
+                                location: hotel['city'] ?? 'Unknown City',
+                                price: _toDouble(hotel['pricePerNight']),
+                                rating: _toDouble(hotel['rating']),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => HotelDetailScreen(
+                                        hotelId: doc.id,
+                                        hotel: hotel,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+
+                        const SliverToBoxAdapter(
+                          child: SizedBox(
+                            height: 120,
+                          ), // Padding for floating nav bar
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // UPDATED BOTTOM NAVIGATION BAR
+  // =========================================================================
+  Widget _buildFloatingNavBar() {
+    final bool isMapTab = _bottomNavIndex == 1;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(30),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isMapTab
+                ? AppColors.backgroundDark1.withValues(alpha: 0.95)
+                : Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: isMapTab
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.white.withValues(alpha: 0.20),
+              width: 1.5,
+            ),
+            boxShadow: isMapTab
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // THE FIX: Changed to home_outlined so it matches the other icons perfectly!
+              _buildNavItem(0, Icons.home_outlined, 'Home'),
+              _buildNavItem(1, Icons.map_outlined, 'Map'),
+              _buildNavItem(2, Icons.bookmark_border_rounded, 'Bookings'),
+              _buildNavItem(3, Icons.person_outline_rounded, 'Profile'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _bottomNavIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _bottomNavIndex = index;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [AppColors.primary, AppColors.secondary],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isSelected
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.50),
+              size: 24,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // =========================================================================
+  // UI COMPONENTS (Remain exactly the same)
+  // =========================================================================
 
   Widget _buildHeader() {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -245,10 +380,10 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                 height: 52,
                 width: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.22),
+                    color: Colors.white.withValues(alpha: 0.22),
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -263,10 +398,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                           );
                         },
                       )
-                    : const Icon(
-                        Icons.person_outline,
-                        color: Colors.white,
-                      ),
+                    : const Icon(Icons.person_outline, color: Colors.white),
               ),
 
               const SizedBox(width: 14),
@@ -313,15 +445,15 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         height: 58,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.10),
+          color: Colors.white.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.22)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
         ),
         child: Row(
           children: [
             Icon(
               Icons.search_rounded,
-              color: Colors.white.withOpacity(0.75),
+              color: Colors.white.withValues(alpha: 0.75),
             ),
 
             const SizedBox(width: 12),
@@ -347,7 +479,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search hotel or city...',
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.55),
+                    color: Colors.white.withValues(alpha: 0.55),
                   ),
                   border: InputBorder.none,
                 ),
@@ -366,7 +498,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                 },
                 child: Icon(
                   Icons.close_rounded,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                 ),
               ),
           ],
@@ -403,19 +535,18 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.accent
-                    : Colors.white.withOpacity(0.10),
+                    : Colors.white.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.accent
-                      : Colors.white.withOpacity(0.18),
+                      : Colors.white.withValues(alpha: 0.18),
                 ),
               ),
               child: Text(
                 city,
                 style: TextStyle(
-                  color:
-                      isSelected ? AppColors.backgroundDark1 : Colors.white,
+                  color: isSelected ? AppColors.backgroundDark1 : Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -490,113 +621,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HotelDetailScreen(
-                      hotelId: doc.id,
-                      hotel: hotel,
-                    ),
+                    builder: (context) =>
+                        HotelDetailScreen(hotelId: doc.id, hotel: hotel),
                   ),
                 );
               },
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigation() {
-    return Container(
-      height: 78,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            AppColors.backgroundDark1,
-            AppColors.backgroundDark2,
-          ],
-        ),
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.16)),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _bottomItem(
-            icon: Icons.home_rounded,
-            label: 'Home',
-            selected: true,
-            onTap: () {},
-          ),
-          _bottomItem(
-            icon: Icons.map_outlined,
-            label: 'Map',
-            selected: false,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const HotelsMapScreen(),
-                ),
-              );
-            },
-          ),
-          _bottomItem(
-            icon: Icons.bookmark_border_rounded,
-            label: 'Bookings',
-            selected: false,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CustomerBookingsScreen(),
-                ),
-              );
-            },
-          ),
-          _bottomItem(
-            icon: Icons.person_outline_rounded,
-            label: 'Profile',
-            selected: false,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _bottomItem({
-    required IconData icon,
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: selected ? AppColors.accent : Colors.white70),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? AppColors.accent : Colors.white70,
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -612,9 +644,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         child: Container(
           padding: const EdgeInsets.all(26),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
+            color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.20)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -633,7 +665,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               const SizedBox(height: 8),
               Text(
                 subtitle,
-                style: TextStyle(color: Colors.white.withOpacity(0.70)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.70)),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -668,7 +700,7 @@ class _StaticGlowBackground extends StatelessWidget {
               height: 260,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.22),
+                color: AppColors.primary.withValues(alpha: 0.22),
               ),
             ),
           ),
@@ -680,7 +712,7 @@ class _StaticGlowBackground extends StatelessWidget {
               height: 320,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.secondary.withOpacity(0.18),
+                color: AppColors.secondary.withValues(alpha: 0.18),
               ),
             ),
           ),
@@ -717,7 +749,7 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.20),
+              color: Colors.black.withValues(alpha: 0.20),
               blurRadius: 18,
               offset: const Offset(0, 10),
             ),
@@ -736,7 +768,7 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
                 return Container(
                   height: 190,
                   width: 235,
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   child: const Icon(
                     Icons.hotel,
                     color: Colors.white70,
@@ -754,8 +786,8 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.05),
-                    Colors.black.withOpacity(0.78),
+                    Colors.black.withValues(alpha: 0.05),
+                    Colors.black.withValues(alpha: 0.78),
                   ],
                 ),
               ),
@@ -765,14 +797,13 @@ class _FeaturedGlassHotelCard extends StatelessWidget {
               top: 12,
               right: 12,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.35),
+                  color: Colors.black.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: Colors.white.withOpacity(0.20)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.20),
+                  ),
                 ),
                 child: Row(
                   children: [

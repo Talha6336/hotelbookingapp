@@ -103,7 +103,7 @@ class ProfileScreen extends StatelessWidget {
                       Text(
                         'Manage your account and booking activity.',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.70),
+                          color: Colors.white.withValues(alpha: 0.70),
                           fontSize: 14,
                         ),
                       ),
@@ -227,12 +227,12 @@ class ProfileScreen extends StatelessWidget {
                     )
                   : null,
               border: Border.all(
-                color: Colors.white.withOpacity(0.28),
+                color: Colors.white.withValues(alpha: 0.28),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.35),
+                  color: AppColors.primary.withValues(alpha: 0.35),
                   blurRadius: 22,
                   offset: const Offset(0, 10),
                 ),
@@ -261,7 +261,7 @@ class ProfileScreen extends StatelessWidget {
             email,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.68),
+              color: Colors.white.withValues(alpha: 0.68),
               fontSize: 13,
             ),
           ),
@@ -272,10 +272,10 @@ class ProfileScreen extends StatelessWidget {
               vertical: 8,
             ),
             decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.16),
+              color: AppColors.accent.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: AppColors.accent.withOpacity(0.70),
+                color: AppColors.accent.withValues(alpha: 0.70),
               ),
             ),
             child: Text(
@@ -375,7 +375,7 @@ class ProfileScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.62),
+              color: Colors.white.withValues(alpha: 0.62),
               fontSize: 12,
             ),
           ),
@@ -484,7 +484,7 @@ class ProfileScreen extends StatelessWidget {
             child: Text(
               title,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.62),
+                color: Colors.white.withValues(alpha: 0.62),
                 fontSize: 13,
               ),
             ),
@@ -525,10 +525,10 @@ class ProfileScreen extends StatelessWidget {
               height: 42,
               width: 42,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.14),
+                color: color.withValues(alpha: 0.14),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: color.withOpacity(0.35),
+                  color: color.withValues(alpha: 0.35),
                 ),
               ),
               child: Icon(
@@ -554,7 +554,7 @@ class ProfileScreen extends StatelessWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.58),
+                      color: Colors.white.withValues(alpha: 0.58),
                       fontSize: 12,
                     ),
                   ),
@@ -563,7 +563,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             Icon(
               Icons.arrow_forward_ios_rounded,
-              color: Colors.white.withOpacity(0.45),
+              color: Colors.white.withValues(alpha: 0.45),
               size: 16,
             ),
           ],
@@ -586,10 +586,10 @@ class ProfileScreen extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.13),
+              color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
               ),
             ),
             child: Icon(
@@ -615,10 +615,10 @@ class ProfileScreen extends StatelessWidget {
           width: double.infinity,
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
+            color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.20),
+              color: Colors.white.withValues(alpha: 0.20),
             ),
           ),
           child: child,
@@ -629,7 +629,7 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _divider() {
     return Divider(
-      color: Colors.white.withOpacity(0.12),
+      color: Colors.white.withValues(alpha: 0.12),
       height: 1,
     );
   }
@@ -661,7 +661,7 @@ class ProfileScreen extends StatelessWidget {
                 'Please login to view your profile.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.70),
+                  color: Colors.white.withValues(alpha: 0.70),
                 ),
               ),
               const SizedBox(height: 20),
@@ -705,7 +705,7 @@ class ProfileScreen extends StatelessWidget {
           content: Text(
             'Are you sure you want to logout?',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.72),
+              color: Colors.white.withValues(alpha: 0.72),
             ),
           ),
           actions: [
@@ -716,7 +716,7 @@ class ProfileScreen extends StatelessWidget {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.70),
+                  color: Colors.white.withValues(alpha: 0.70),
                 ),
               ),
             ),

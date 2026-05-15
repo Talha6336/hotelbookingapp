@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart'; // <-- ADDED GEOLOCATOR
 
 import '../../core/theme/app_theme.dart';
 import '../widgets/app_background.dart';
@@ -20,9 +21,11 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
   final MapController mapController = MapController();
 
   bool isLoading = true;
+  bool isGettingLocation = false; // <-- Tracks GPS loading state
   List<QueryDocumentSnapshot<Map<String, dynamic>>> hotelDocs = [];
 
   final LatLng initialCenter = const LatLng(31.4504, 73.1350);
+  LatLng? currentUserLocation; // <-- Stores the user's actual location
 
   @override
   void initState() {
@@ -38,10 +41,76 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
     return double.tryParse(value.toString()) ?? 0.0;
   }
 
+  // ===========================================================================
+  // NEW: GET CURRENT LOCATION LOGIC
+  // ===========================================================================
+  Future<void> _getCurrentLocation() async {
+    setState(() => isGettingLocation = true);
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+      // --- THE UPGRADE: Interactive Error Message ---
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Location services are turned off.'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 5),
+            // Adds a button right inside the error to open phone settings!
+            action: SnackBarAction(
+              label: 'TURN ON',
+              textColor: Colors.white,
+              onPressed: () async {
+                await Geolocator.openLocationSettings();
+              },
+            ),
+          ),
+        );
+        setState(() => isGettingLocation = false);
+        return;
+      }
+      // ----------------------------------------------
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          _showErrorSnackBar("Location permissions denied.");
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        _showErrorSnackBar("Location permissions permanently denied.");
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final newLatLng = LatLng(position.latitude, position.longitude);
+
+      setState(() {
+        currentUserLocation = newLatLng;
+      });
+
+      // Fly the map to the user's location smoothly
+      mapController.move(newLatLng, 14.0);
+    } catch (e) {
+      _showErrorSnackBar("Failed to get location: $e");
+    } finally {
+      if (mounted) setState(() => isGettingLocation = false);
+    }
+  }
+
   Future<void> _loadHotels() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('hotels').get();
+      final snapshot = await FirebaseFirestore.instance
+          .collection('hotels')
+          .get();
 
       if (!mounted) return;
 
@@ -58,76 +127,121 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading hotels: $e'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showErrorSnackBar('Error loading hotels: $e');
     }
   }
 
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+
   List<Marker> _buildMarkers() {
-    return hotelDocs.map((doc) {
-      final hotel = doc.data();
+    // 1. Build Hotel Markers
+    List<Marker> allMarkers = hotelDocs
+        .map((doc) {
+          final hotel = doc.data();
 
-      final double latitude = _toDouble(hotel['latitude']);
-      final double longitude = _toDouble(hotel['longitude']);
+          final double latitude = _toDouble(hotel['latitude']);
+          final double longitude = _toDouble(hotel['longitude']);
 
-      if (latitude == 0.0 || longitude == 0.0) {
-        return null;
-      }
+          if (latitude == 0.0 || longitude == 0.0) {
+            return null;
+          }
 
-      return Marker(
-        point: LatLng(latitude, longitude),
-        width: 48,
-        height: 48,
-        child: GestureDetector(
-          onTap: () {
-            _showHotelBottomSheet(
-              hotelId: doc.id,
-              hotel: hotel,
-            );
-          },
+          return Marker(
+            point: LatLng(latitude, longitude),
+            width: 48,
+            height: 48,
+            child: GestureDetector(
+              onTap: () {
+                _showHotelBottomSheet(hotelId: doc.id, hotel: hotel);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.backgroundDark1,
+                    width: 3,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.hotel_rounded,
+                  color: AppColors.backgroundDark1,
+                  size: 24,
+                ),
+              ),
+            ),
+          );
+        })
+        .whereType<Marker>()
+        .toList();
+
+    // 2. Build Current User Marker (Blue Dot) if location is known
+    if (currentUserLocation != null) {
+      allMarkers.add(
+        Marker(
+          point: currentUserLocation!,
+          width: 60,
+          height: 60,
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.accent,
+              color: Colors.blueAccent.withValues(alpha: 0.2),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.backgroundDark1,
-                width: 3,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 5),
-                ),
-              ],
             ),
-            child: const Icon(
-              Icons.hotel_rounded,
-              color: AppColors.backgroundDark1,
-              size: 24,
+            child: Center(
+              child: Container(
+                height: 20,
+                width: 20,
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
       );
-    }).whereType<Marker>().toList();
+    }
+
+    return allMarkers;
   }
 
   void _fitAllHotels() {
-    final validPositions = hotelDocs.map((doc) {
-      final hotel = doc.data();
+    final validPositions = hotelDocs
+        .map((doc) {
+          final hotel = doc.data();
 
-      final double latitude = _toDouble(hotel['latitude']);
-      final double longitude = _toDouble(hotel['longitude']);
+          final double latitude = _toDouble(hotel['latitude']);
+          final double longitude = _toDouble(hotel['longitude']);
 
-      if (latitude == 0.0 || longitude == 0.0) return null;
+          if (latitude == 0.0 || longitude == 0.0) return null;
 
-      return LatLng(latitude, longitude);
-    }).whereType<LatLng>().toList();
+          return LatLng(latitude, longitude);
+        })
+        .whereType<LatLng>()
+        .toList();
 
     if (validPositions.isEmpty) return;
 
@@ -139,10 +253,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
     final bounds = LatLngBounds.fromPoints(validPositions);
 
     mapController.fitCamera(
-      CameraFit.bounds(
-        bounds: bounds,
-        padding: const EdgeInsets.all(60),
-      ),
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(60)),
     );
   }
 
@@ -161,22 +272,18 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(28),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: AppColors.backgroundDark1.withOpacity(0.94),
+                color: AppColors.backgroundDark1.withValues(alpha: 0.94),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(28),
                 ),
                 border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.18),
-                  ),
+                  top: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
                 ),
               ),
               child: SafeArea(
@@ -194,7 +301,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                           return Container(
                             height: 105,
                             width: 105,
-                            color: Colors.white.withOpacity(0.10),
+                            color: Colors.white.withValues(alpha: 0.10),
                             child: const Icon(
                               Icons.hotel,
                               color: Colors.white70,
@@ -237,7 +344,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                                 child: Text(
                                   city,
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.70),
+                                    color: Colors.white.withValues(alpha: 0.70),
                                   ),
                                 ),
                               ),
@@ -300,9 +407,7 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                               ),
                               child: const Text(
                                 'View Details',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -350,17 +455,16 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
                               urlTemplate:
                                   'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
                               subdomains: const ['a', 'b', 'c', 'd'],
-                              userAgentPackageName: 'com.example.hotelbookingapp',
+                              userAgentPackageName:
+                                  'com.example.hotelbookingapp',
                             ),
-                            MarkerLayer(
-                              markers: markers,
-                            ),
+                            MarkerLayer(markers: markers),
                           ],
                         ),
 
                         if (isLoading)
                           Container(
-                            color: Colors.black.withOpacity(0.20),
+                            color: Colors.black.withValues(alpha: 0.20),
                             child: const Center(
                               child: CircularProgressIndicator(
                                 color: AppColors.accent,
@@ -422,18 +526,17 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
               SizedBox(height: 3),
               Text(
                 'Explore hotels by location',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
           ),
         ),
 
+        // NEW: Location Button with loading state
         _circleGlassButton(
           icon: Icons.my_location_rounded,
-          onTap: _fitAllHotels,
+          onTap: _getCurrentLocation,
+          isLoading: isGettingLocation,
         ),
       ],
     );
@@ -442,38 +545,38 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
   Widget _circleGlassButton({
     required IconData icon,
     required VoidCallback onTap,
+    bool isLoading = false, // <-- Added loading state support
   }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(50),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: InkWell(
-          onTap: onTap,
+          onTap: isLoading ? null : onTap,
           child: Container(
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.13),
+              color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withOpacity(0.22),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Icon(icon, color: Colors.white, size: 20),
           ),
         ),
       ),
     );
   }
 
-  Widget _mapButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _mapButton({required IconData icon, required VoidCallback onTap}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(50),
       child: BackdropFilter(
@@ -484,17 +587,11 @@ class _HotelsMapScreenState extends State<HotelsMapScreen> {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: AppColors.backgroundDark1.withOpacity(0.88),
+              color: AppColors.backgroundDark1.withValues(alpha: 0.88),
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withOpacity(0.22),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
             ),
-            child: Icon(
-              icon,
-              color: AppColors.accent,
-              size: 21,
-            ),
+            child: Icon(icon, color: AppColors.accent, size: 21),
           ),
         ),
       ),

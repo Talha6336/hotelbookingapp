@@ -201,14 +201,14 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                     top: -50 +
                         (math.sin(_floatingController.value * math.pi) * 30),
                     left: -50,
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                   ),
                   _buildFloatingCircle(
                     size: 300,
                     bottom: 100 +
                         (math.cos(_floatingController.value * math.pi) * 40),
                     right: -100,
-                    color: AppColors.secondary.withOpacity(0.2),
+                    color: AppColors.secondary.withValues(alpha: 0.2),
                   ),
                 ],
               );
@@ -352,7 +352,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                 Text(
                   'Manage your hotel reservations',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                 ),
@@ -386,17 +386,17 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             height: 58,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.10),
+              color: Colors.white.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.20),
+                color: Colors.white.withValues(alpha: 0.20),
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.search_rounded,
-                  color: Colors.white.withOpacity(0.65),
+                  color: Colors.white.withValues(alpha: 0.65),
                 ),
 
                 const SizedBox(width: 12),
@@ -422,7 +422,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                     decoration: InputDecoration(
                       hintText: 'Search hotel, status, price...',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.50),
+                        color: Colors.white.withValues(alpha: 0.50),
                       ),
                       border: InputBorder.none,
                     ),
@@ -434,7 +434,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                     onTap: _clearSearch,
                     child: Icon(
                       Icons.close_rounded,
-                      color: Colors.white.withOpacity(0.65),
+                      color: Colors.white.withValues(alpha: 0.65),
                     ),
                   ),
               ],
@@ -484,10 +484,10 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
         ),
       ),
       child: FittedBox(
@@ -500,7 +500,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             Text(
               title,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 13,
               ),
             ),
@@ -553,17 +553,17 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                         ],
                       )
                     : null,
-                color: isSelected ? null : Colors.white.withOpacity(0.08),
+                color: isSelected ? null : Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: isSelected
                       ? Colors.transparent
-                      : Colors.white.withOpacity(0.2),
+                      : Colors.white.withValues(alpha: 0.2),
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
+                          color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 10,
                         ),
                       ]
@@ -575,7 +575,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                   style: TextStyle(
                     color: isSelected
                         ? Colors.white
-                        : Colors.white.withOpacity(0.7),
+                        : Colors.white.withValues(alpha: 0.7),
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
@@ -596,10 +596,10 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           height: 42,
           width: 42,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: Colors.white.withValues(alpha: 0.1),
             shape: BoxShape.circle,
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
           ),
           child: Icon(
@@ -656,7 +656,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
             Icon(
               icon,
               size: 80,
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
             ),
             const SizedBox(height: 20),
             Text(
@@ -673,7 +673,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 15,
               ),
             ),
@@ -717,7 +717,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
           margin: const EdgeInsets.only(bottom: 16),
           height: 160,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(24),
           ),
         );
@@ -864,7 +864,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
       width: 80,
       height: 80,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: const Icon(
@@ -908,12 +908,12 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: _isExpanded
-                    ? statusColor.withOpacity(0.5)
-                    : Colors.white.withOpacity(0.15),
+                    ? statusColor.withValues(alpha: 0.5)
+                    : Colors.white.withValues(alpha: 0.15),
               ),
             ),
             child: Column(
@@ -967,10 +967,10 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.2),
+                                    color: statusColor.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: statusColor.withOpacity(0.5),
+                                      color: statusColor.withValues(alpha: 0.5),
                                     ),
                                   ),
                                   child: Text(
@@ -993,7 +993,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                               child: Text(
                                 '${_formatDate(widget.bookingData['checkInDate'])} - ${_formatDate(widget.bookingData['checkOutDate'])}',
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 13,
                                 ),
                               ),
@@ -1026,7 +1026,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
                     child: Column(
                       children: [
                         Divider(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           height: 24,
                         ),
                         _buildDetailRow(
@@ -1069,7 +1069,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 13,
             ),
           ),
@@ -1125,7 +1125,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
               onPressed: () {},
               style: OutlinedButton.styleFrom(
                 side: BorderSide(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                 ),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
@@ -1168,7 +1168,7 @@ class _PremiumBookingCardState extends State<_PremiumBookingCard> {
         child: ElevatedButton(
           onPressed: () {},
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white.withOpacity(0.1),
+            backgroundColor: Colors.white.withValues(alpha: 0.1),
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(

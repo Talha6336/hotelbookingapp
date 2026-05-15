@@ -83,7 +83,7 @@ class SingleHotelMapScreen extends StatelessWidget {
                                             boxShadow: [
                                               BoxShadow(
                                                 color: Colors.black
-                                                    .withOpacity(0.25),
+                                                    .withValues(alpha: 0.25),
                                                 blurRadius: 12,
                                                 offset: const Offset(0, 5),
                                               ),
@@ -180,10 +180,10 @@ class SingleHotelMapScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.backgroundDark1.withOpacity(0.88),
+            color: AppColors.backgroundDark1.withValues(alpha: 0.88),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: Colors.white.withOpacity(0.20),
+              color: Colors.white.withValues(alpha: 0.20),
             ),
           ),
           child: Row(
@@ -192,7 +192,7 @@ class SingleHotelMapScreen extends StatelessWidget {
                 height: 48,
                 width: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.18),
+                  color: AppColors.accent.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -221,7 +221,7 @@ class SingleHotelMapScreen extends StatelessWidget {
                     Text(
                       city,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.70),
+                        color: Colors.white.withValues(alpha: 0.70),
                         fontSize: 13,
                       ),
                     ),
@@ -231,7 +231,7 @@ class SingleHotelMapScreen extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.55),
+                        color: Colors.white.withValues(alpha: 0.55),
                         fontSize: 12,
                       ),
                     ),
@@ -247,7 +247,7 @@ class SingleHotelMapScreen extends StatelessWidget {
 
   Widget _buildNoLocationCard() {
     return Container(
-      color: AppColors.backgroundDark1.withOpacity(0.90),
+      color: AppColors.backgroundDark1.withValues(alpha: 0.90),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -258,10 +258,10 @@ class SingleHotelMapScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(26),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.10),
+                  color: Colors.white.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.20),
+                    color: Colors.white.withValues(alpha: 0.20),
                   ),
                 ),
                 child: Column(
@@ -286,7 +286,7 @@ class SingleHotelMapScreen extends StatelessWidget {
                       'This hotel does not have latitude and longitude saved.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.70),
+                        color: Colors.white.withValues(alpha: 0.70),
                       ),
                     ),
                   ],
@@ -313,10 +313,10 @@ class SingleHotelMapScreen extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.13),
+              color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
               ),
             ),
             child: Icon(

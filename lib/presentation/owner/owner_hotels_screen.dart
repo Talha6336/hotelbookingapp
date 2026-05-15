@@ -1,13 +1,12 @@
 import 'dart:ui';
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
-import 'add_hotel_screen.dart'; // Make sure this path is correct
-import 'edit_hotel_screen.dart'; // We will create this next
+import 'add_hotel_screen.dart';
+import 'edit_hotel_screen.dart';
 
 class OwnerHotelsScreen extends StatefulWidget {
   const OwnerHotelsScreen({super.key});
@@ -19,10 +18,12 @@ class OwnerHotelsScreen extends StatefulWidget {
 class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
     with TickerProviderStateMixin {
   late AnimationController _floatingController;
- 
+
   final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
   String _searchQuery = '';
+
+  // THE FIX: Cache the stream so it doesn't reset on every keystroke
+  late Stream<QuerySnapshot> _hotelsStream;
 
   @override
   void initState() {
@@ -31,12 +32,15 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
       vsync: this,
       duration: const Duration(seconds: 15),
     )..repeat(reverse: true);
+
+    // Initialize the stream only ONCE when the screen loads
+    _hotelsStream = _getMyHotelsStream();
   }
 
   @override
   void dispose() {
     _floatingController.dispose();
-    // _searchController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -53,14 +57,12 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
 
   Map<String, dynamic> _computeAnalytics(List<QueryDocumentSnapshot> docs) {
     int active = 0;
-    double totalRevenue =
-        0; // In a real app, this would be aggregated from bookings
+    double totalRevenue = 0;
     int totalRooms = 0;
 
     for (var doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
       if (data['status'] != 'Disabled') active++;
-      // Placeholder logic for rooms and revenue
       totalRooms += (data['rooms'] as List?)?.length ?? 10;
       totalRevenue += (data['revenue'] ?? 0).toDouble();
     }
@@ -76,8 +78,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          Colors.transparent, // Ensures bottom nav background shows through
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           // 1. Luxury Gradient Background
@@ -95,13 +96,13 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                     size: 300,
                     top: -100,
                     left: -50,
-                    color: AppColors.primary.withOpacity(0.25),
+                    color: AppColors.primary.withValues(alpha: 0.25),
                   ),
                   _buildFloatingCircle(
                     size: 400,
                     bottom: 100,
                     right: -150,
-                    color: AppColors.secondary.withOpacity(0.2),
+                    color: AppColors.secondary.withValues(alpha: 0.2),
                   ),
                 ],
               );
@@ -111,102 +112,121 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
           // 3. Main Content
           SafeArea(
             bottom: false,
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _getMyHotelsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: AppColors.accent),
-                  );
-                }
+            // THE FIX: Move App Bar and Search OUTSIDE the StreamBuilder
+            child: Column(
+              children: [
+                _buildAppBar(),
+                _buildSearchAndFilter(),
 
-                if (snapshot.hasError) {
-                  return const Center(
-                    child: Text(
-                      "Error loading hotels",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  );
-                }
-
-                final docs = snapshot.data?.docs ?? [];
-                final analytics = _computeAnalytics(docs);
-
-                final filteredDocs = docs.where((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-
-                final query = _searchQuery.trim().toLowerCase();
-
-                if (query.isEmpty) return true;
-
-                final name = (data['name'] ?? '').toString().toLowerCase();
-                final city = (data['city'] ?? '').toString().toLowerCase();
-                final address = (data['address'] ?? '').toString().toLowerCase();
-                final category = (data['category'] ?? '').toString().toLowerCase();
-                final price = (data['pricePerNight'] ?? '').toString().toLowerCase();
-
-                return name.contains(query) ||
-                    city.contains(query) ||
-                    address.contains(query) ||
-                    category.contains(query) ||
-                    price.contains(query);
-              }).toList();
-
-                return CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildAppBar()),
-                    SliverToBoxAdapter(child: _buildSearchAndFilter()),
-                    if (docs.isNotEmpty)
-                      SliverToBoxAdapter(child: _buildTopAnalytics(analytics)),
-
-                    if (docs.isEmpty)
-                      SliverFillRemaining(child: _buildEmptyState())
-                    else if (filteredDocs.isEmpty)
-                      const SliverFillRemaining(
-                        child: Center(
-                          child: Text(
-                            "No hotels match your search.",
-                            style: TextStyle(color: Colors.white70),
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: _hotelsStream, // Uses the cached stream
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: AppColors.accent,
                           ),
-                        ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          bottom: 120,
-                        ), // Padding for bottom nav
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final data =
-                                filteredDocs[index].data()
-                                    as Map<String, dynamic>;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: _PremiumOwnerHotelCard(
-                                hotelData: data,
-                                hotelId: filteredDocs[index].id,
+                        );
+                      }
+
+                      if (snapshot.hasError) {
+                        return const Center(
+                          child: Text(
+                            "Error loading hotels",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        );
+                      }
+
+                      final docs = snapshot.data?.docs ?? [];
+                      final analytics = _computeAnalytics(docs);
+
+                      final filteredDocs = docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final query = _searchQuery.trim().toLowerCase();
+
+                        if (query.isEmpty) return true;
+
+                        final name = (data['name'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final city = (data['city'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final address = (data['address'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final category = (data['category'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final price = (data['pricePerNight'] ?? '')
+                            .toString()
+                            .toLowerCase();
+
+                        return name.contains(query) ||
+                            city.contains(query) ||
+                            address.contains(query) ||
+                            category.contains(query) ||
+                            price.contains(query);
+                      }).toList();
+
+                      return CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          if (docs.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: _buildTopAnalytics(analytics),
+                            ),
+
+                          if (docs.isEmpty)
+                            SliverFillRemaining(child: _buildEmptyState())
+                          else if (filteredDocs.isEmpty)
+                            const SliverFillRemaining(
+                              child: Center(
+                                child: Text(
+                                  "No hotels match your search.",
+                                  style: TextStyle(color: Colors.white70),
+                                ),
                               ),
-                            );
-                          }, childCount: filteredDocs.length),
-                        ),
-                      ),
-                  ],
-                );
-              },
+                            )
+                          else
+                            SliverPadding(
+                              padding: const EdgeInsets.only(
+                                left: 20,
+                                right: 20,
+                                bottom: 120,
+                              ),
+                              sliver: SliverList(
+                                delegate: SliverChildBuilderDelegate((
+                                  context,
+                                  index,
+                                ) {
+                                  final data =
+                                      filteredDocs[index].data()
+                                          as Map<String, dynamic>;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 20),
+                                    child: _PremiumOwnerHotelCard(
+                                      hotelData: data,
+                                      hotelId: filteredDocs[index].id,
+                                    ),
+                                  );
+                                }, childCount: filteredDocs.length),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(
-          bottom: 80,
-        ), // Sit above the bottom nav bar
+        padding: const EdgeInsets.only(bottom: 80),
         child: FloatingActionButton.extended(
           onPressed: () => Navigator.push(
             context,
@@ -233,27 +253,25 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
       child: Row(
-
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-           ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 18,
                 ),
+                onPressed: () => Navigator.pop(context),
               ),
+            ),
+          ),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-             
               Text(
                 "My Hotels",
                 style: TextStyle(
@@ -277,70 +295,56 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
   }
 
   Widget _buildSearchAndFilter() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-    child: Row(
-      children: [
-        Expanded(
-          child: _glassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              style: const TextStyle(color: Colors.white),
-              keyboardType: TextInputType.text,
-              textInputAction: TextInputAction.search,
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val;
-                });
-
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted && !_searchFocusNode.hasFocus) {
-                    _searchFocusNode.requestFocus();
-                  }
-                });
-              },
-              decoration: InputDecoration(
-                hintText: "Search your hotels...",
-                hintStyle: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _glassCard(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                // Removed the buggy FocusNode completely
+                style: const TextStyle(color: Colors.white),
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.search,
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: "Search your hotels...",
+                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                  icon: Icon(
+                    Icons.search,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white54,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
                 ),
-                icon: Icon(
-                  Icons.search,
-                  color: Colors.white.withOpacity(0.5),
-                ),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white54,
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            if (mounted) {
-                              _searchFocusNode.requestFocus();
-                            }
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        _glassIconButton(Icons.tune_rounded),
-      ],
-    ),
-  );
-}
+          const SizedBox(width: 12),
+          _glassIconButton(Icons.tune_rounded),
+        ],
+      ),
+    );
+  }
 
   Widget _buildTopAnalytics(Map<String, dynamic> analytics) {
     return SizedBox(
@@ -384,11 +388,10 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      // THE FIX: Wrap the Column in a FittedBox
       child: FittedBox(
         fit: BoxFit.scaleDown,
         alignment: Alignment.centerLeft,
@@ -403,13 +406,13 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
                 Text(
                   title,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12), // Replaced Spacer with a fixed SizedBox
+            const SizedBox(height: 12),
             Text(
               value,
               style: TextStyle(
@@ -432,7 +435,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
           Icon(
             Icons.domain_disabled_rounded,
             size: 80,
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
           ),
           const SizedBox(height: 20),
           const Text(
@@ -447,7 +450,7 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
           Text(
             "Start building your hotel business today.",
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 15,
             ),
           ),
@@ -464,9 +467,9 @@ class _OwnerHotelsScreenState extends State<OwnerHotelsScreen>
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.08),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
           child: child,
         ),
@@ -545,8 +548,7 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
     final String city = hotelData['city'] ?? 'Unknown City';
     final double price = (hotelData['pricePerNight'] ?? 0).toDouble();
     final double rating = (hotelData['rating'] ?? 0).toDouble();
-    final String status =
-        hotelData['status'] ?? 'Active'; // Assume 'Active' if not set
+    final String status = hotelData['status'] ?? 'Active';
 
     return GestureDetector(
       onTap: () {
@@ -564,9 +566,9 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.15)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -601,8 +603,8 @@ class _PremiumOwnerHotelCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: status == 'Active'
-                                ? const Color(0xFF4CAF50).withOpacity(0.9)
-                                : const Color(0xFFFF9800).withOpacity(0.9),
+                                ? const Color(0xFF4CAF50).withValues(alpha: 0.9)
+                                : const Color(0xFFFF9800).withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(

@@ -180,7 +180,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                 ? 'Are you sure you want to accept this booking request?'
                 : 'Are you sure you want to reject this booking request?',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.72),
+              color: Colors.white.withValues(alpha: 0.72),
             ),
           ),
           actions: [
@@ -191,7 +191,7 @@ class OwnerBookingsScreen extends StatelessWidget {
               child: Text(
                 'Cancel',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.70),
+                  color: Colors.white.withValues(alpha: 0.70),
                 ),
               ),
             ),
@@ -250,7 +250,7 @@ class OwnerBookingsScreen extends StatelessWidget {
                 Text(
                   'Accept or reject customer booking requests.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.70),
+                    color: Colors.white.withValues(alpha: 0.70),
                     fontSize: 14,
                   ),
                 ),
@@ -495,10 +495,10 @@ class OwnerBookingsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: _statusColor(status).withOpacity(0.18),
+        color: _statusColor(status).withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: _statusColor(status).withOpacity(0.75),
+          color: _statusColor(status).withValues(alpha: 0.75),
         ),
       ),
       child: Text(
@@ -529,7 +529,7 @@ class OwnerBookingsScreen extends StatelessWidget {
           child: Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.62),
+              color: Colors.white.withValues(alpha: 0.62),
               fontSize: 13,
             ),
           ),
@@ -563,10 +563,10 @@ class OwnerBookingsScreen extends StatelessWidget {
             height: 46,
             width: 46,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.13),
+              color: Colors.white.withValues(alpha: 0.13),
               shape: BoxShape.circle,
               border: Border.all(
-                color: Colors.white.withOpacity(0.22),
+                color: Colors.white.withValues(alpha: 0.22),
               ),
             ),
             child: Icon(
@@ -596,10 +596,10 @@ class OwnerBookingsScreen extends StatelessWidget {
             width: double.infinity,
             padding: padding,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.10),
+              color: Colors.white.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.20),
+                color: Colors.white.withValues(alpha: 0.20),
               ),
             ),
             child: child,
@@ -639,7 +639,7 @@ class OwnerBookingsScreen extends StatelessWidget {
             Text(
               subtitle,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.70),
+                color: Colors.white.withValues(alpha: 0.70),
               ),
               textAlign: TextAlign.center,
             ),

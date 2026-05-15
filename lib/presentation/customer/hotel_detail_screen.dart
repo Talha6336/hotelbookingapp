@@ -173,7 +173,7 @@ class HotelDetailScreen extends StatelessWidget {
                           child: Text(
                             description,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.75),
+                              color: Colors.white.withValues(alpha: 0.75),
                               fontSize: 14,
                               height: 1.6,
                             ),
@@ -231,7 +231,7 @@ class HotelDetailScreen extends StatelessWidget {
               return Container(
                 height: 330,
                 width: double.infinity,
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withValues(alpha: 0.10),
                 child: const Icon(
                   Icons.hotel,
                   size: 80,
@@ -252,9 +252,9 @@ class HotelDetailScreen extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Colors.black.withOpacity(0.35),
+                Colors.black.withValues(alpha: 0.35),
                 Colors.transparent,
-                Colors.black.withOpacity(0.75),
+                Colors.black.withValues(alpha: 0.75),
               ],
             ),
           ),
@@ -289,10 +289,10 @@ class HotelDetailScreen extends StatelessWidget {
               vertical: 9,
             ),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.38),
+              color: Colors.black.withValues(alpha: 0.38),
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
               ),
             ),
             child: Row(
@@ -330,10 +330,10 @@ class HotelDetailScreen extends StatelessWidget {
         height: 46,
         width: 46,
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.35),
+          color: Colors.black.withValues(alpha: 0.35),
           shape: BoxShape.circle,
           border: Border.all(
-            color: Colors.white.withOpacity(0.25),
+            color: Colors.white.withValues(alpha: 0.25),
           ),
         ),
         child: Icon(
@@ -379,7 +379,7 @@ class HotelDetailScreen extends StatelessWidget {
                     child: Text(
                       city,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 14,
                       ),
                     ),
@@ -406,7 +406,7 @@ class HotelDetailScreen extends StatelessWidget {
             Text(
               '/ night',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.65),
+                color: Colors.white.withValues(alpha: 0.65),
                 fontSize: 13,
               ),
             ),
@@ -421,10 +421,10 @@ class HotelDetailScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.10),
+        color: Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: Colors.white.withOpacity(0.20),
+          color: Colors.white.withValues(alpha: 0.20),
         ),
       ),
       child: child,
@@ -452,7 +452,7 @@ class HotelDetailScreen extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.55),
+                  color: Colors.white.withValues(alpha: 0.55),
                   fontSize: 12,
                 ),
               ),
@@ -490,9 +490,9 @@ class HotelDetailScreen extends StatelessWidget {
         height: 150,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           border: Border.all(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.withValues(alpha: 0.15),
           ),
         ),
         child: Stack(
@@ -501,7 +501,7 @@ class HotelDetailScreen extends StatelessWidget {
               child: Icon(
                 Icons.map_outlined,
                 size: 72,
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
               ),
             ),
 
@@ -564,10 +564,10 @@ class HotelDetailScreen extends StatelessWidget {
             vertical: 12,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.10),
+            color: Colors.white.withValues(alpha: 0.10),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
             ),
           ),
           child: Row(
@@ -604,13 +604,13 @@ class HotelDetailScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDark1.withOpacity(0.96),
+          color: AppColors.backgroundDark1.withValues(alpha: 0.96),
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(26),
           ),
           border: Border(
             top: BorderSide(
-              color: Colors.white.withOpacity(0.18),
+              color: Colors.white.withValues(alpha: 0.18),
             ),
           ),
         ),
@@ -631,7 +631,7 @@ class HotelDetailScreen extends StatelessWidget {
                     TextSpan(
                       text: '\nTotal per night',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.65),
+                        color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 12,
                       ),
                     ),

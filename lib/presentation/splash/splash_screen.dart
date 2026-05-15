@@ -156,7 +156,7 @@ class _SplashScreenState extends State<SplashScreen>
                         -50 +
                         (math.sin(_floatingController.value * math.pi) * 30),
                     left: -50,
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                   ),
                   _buildFloatingCircle(
                     size: 300,
@@ -164,7 +164,7 @@ class _SplashScreenState extends State<SplashScreen>
                         -100 +
                         (math.cos(_floatingController.value * math.pi) * 40),
                     right: -100,
-                    color: AppColors.secondary.withOpacity(0.2),
+                    color: AppColors.secondary.withValues(alpha: 0.2),
                   ),
                 ],
               );
@@ -188,16 +188,16 @@ class _SplashScreenState extends State<SplashScreen>
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accent.withOpacity(0.3),
+                              color: AppColors.accent.withValues(alpha: 0.3),
                               blurRadius: 40,
                               spreadRadius: 10,
                             ),
                           ],
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             width: 1.5,
                           ),
                         ),
@@ -235,7 +235,7 @@ class _SplashScreenState extends State<SplashScreen>
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w400,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -262,7 +262,7 @@ class _SplashScreenState extends State<SplashScreen>
                           "Finding the best stays for you...",
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                           ),
                         ),
                         const SizedBox(height: 40),
