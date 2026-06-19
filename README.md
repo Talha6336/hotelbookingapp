@@ -2,7 +2,11 @@
 
 # 🏨 StayEase
 
-<video src="assets/readme/StayEase.mp4" width="450" height="750" autoplay loop muted playsinline></video>
+<a href="https://drive.google.com/file/d/1S0b13ExFMtixVy_OczhqmsXRPi5MP7N9/view?usp=sharing">
+
+<img src="assets/readme/video_thumbnail.png" alt="Watch StayEase Demo" height="250">
+
+</a>
 
 **A Complete Real-Time Hotel Booking & Management Ecosystem**
 
