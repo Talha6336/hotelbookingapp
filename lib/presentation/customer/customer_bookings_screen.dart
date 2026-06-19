@@ -172,7 +172,7 @@ class _CustomerBookingsScreenState extends State<CustomerBookingsScreen>
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return _buildLoadingState();
                       }
-
+ 
                       if (snapshot.hasError) {
                         return _buildKeyboardSafeEmptyState(
                           title: 'Error loading bookings',
