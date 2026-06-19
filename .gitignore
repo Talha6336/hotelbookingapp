@@ -46,5 +46,5 @@ app.*.map.json
 
 
 # igonre generated files
-/lib/firebase_options.dart
-/lib/services/cloudinary_service.dart/
+lib/firebase_options.dart
+lib/services/cloudinary_service.dart/
